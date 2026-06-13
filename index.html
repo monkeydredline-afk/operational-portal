@@ -49,6 +49,7 @@
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
     <div class="flex h-screen overflow-hidden">
+        <!-- SIDEBAR -->
         <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
             <div class="p-5">
                 <h1 class="text-xl font-bold tracking-wider text-cyan-400 mb-8">
@@ -74,6 +75,7 @@
             </div>
         </div>
 
+        <!-- MAIN CONTENT -->
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
@@ -84,6 +86,7 @@
 
             <main class="p-6 max-w-5xl w-full mx-auto space-y-6">
                 
+                <!-- FORM INPUT & IMPORT TOOLBAR -->
                 <div class="bg-white rounded-xl shadow-sm border p-6">
                     <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
@@ -108,6 +111,7 @@
                     </form>
                 </div>
 
+                <!-- TABLE DATA -->
                 <div class="bg-white rounded-xl shadow-sm border p-6 overflow-hidden">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
@@ -130,6 +134,7 @@
                     </div>
                 </div>
 
+                <!-- TOAST NOTIFICATION -->
                 <div id="toast" class="hidden fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center space-x-3 transition duration-300 z-50">
                     <i class="fa-solid fa-circle-check text-xl"></i>
                     <span>Data berhasil disimpan online di Database Cloud!</span>
@@ -139,6 +144,7 @@
         </div>
     </div>
 
+    <!-- MODAL POP-UP UNTUK EDIT DATA -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -215,7 +221,7 @@
                     <label class="block text-sm font-medium text-gray-700">Pilih Unit Laptop yang Tersedia (Bisa Centang Banyak)</label>
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
-                        <input type="text" id="search-form-laptop" oninput="populateLaptopCheckboxes()" placeholder="Ketik Merk, Tipe, atau SN untuk mencari..." class="w-full pl-8 pr-4 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none bg-slate-50">
+                        <input type="text" id="search-form-laptop" oninput="populateLaptopCheckboxes()" placeholder="Ketik Merk, Tipe, SN, atau Kode Toko..." class="w-full pl-8 pr-4 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none bg-slate-50">
                     </div>
                     <div id="checkbox-laptop-container" class="border border-gray-300 rounded-xl p-3 max-h-52 overflow-y-auto bg-white space-y-2"></div>
                 </div>
@@ -272,8 +278,8 @@
                     <input type="text" name="sn" placeholder="Masukkan nomor SN unik" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Harga Sewa per Hari (Rp)</label>
-                    <input type="number" name="harga_sewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko</label>
+                    <input type="text" name="kode_toko" placeholder="Contoh: TK-01, LT-A5" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi Singkat</label>
@@ -294,14 +300,14 @@
             services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
             penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
-            list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
+            list_laptop: ['ID', 'Tanggal Input', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi', 'Status', 'Aksi']
         };
 
         const dataKeysMapping = {
             services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_selesai', 'total_biaya', 'status'],
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
-            list_laptop: ['id', 'tanggal', 'merk', 'tipe', 'sn', 'spek', 'harga_sewa', 'status']
+            list_laptop: ['id', 'tanggal', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status']
         };
 
         function initApp() {
@@ -338,7 +344,6 @@
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
 
-            // Tampilkan tombol import hanya saat berada di tab 'list_laptop'
             const importBtn = document.getElementById('import-excel-container');
             if (importBtn) {
                 if (tabName === 'list_laptop') importBtn.classList.remove('hidden');
@@ -393,7 +398,8 @@
                 const type = (lap.tipe || '').toLowerCase();
                 const sn = (lap.sn || '').toLowerCase();
                 const spec = (lap.spek || '').toLowerCase();
-                return brand.includes(searchQuery) || type.includes(searchQuery) || sn.includes(searchQuery) || spec.includes(searchQuery);
+                const kdtoko = (lap.kode_toko || '').toLowerCase();
+                return brand.includes(searchQuery) || type.includes(searchQuery) || sn.includes(searchQuery) || spec.includes(searchQuery) || kdtoko.includes(searchQuery);
             });
 
             if(filteredLaptop.length === 0) {
@@ -404,14 +410,16 @@
             let html = '';
             filteredLaptop.forEach((lap) => {
                 const snText = lap.sn ? lap.sn : 'Tanpa SN';
-                const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}]`;
+                const kdTokoText = lap.kode_toko ? lap.kode_toko : '-';
+                const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}] [Kode: ${kdTokoText}]`;
                 const isDisabled = lap.status !== 'Tersedia';
                 
                 html += `
                     <label class="flex items-start space-x-3 p-1.5 hover:bg-slate-50 rounded-lg transition text-sm ${isDisabled ? 'text-gray-400 bg-gray-50' : 'cursor-pointer'}">
                         <input type="checkbox" name="selected_laptops" value="${infoText}" data-key="${lap._firebaseKey}" ${isDisabled ? 'disabled' : ''} class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
                         <div>
-                            <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span>
+                            <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
+                            <span class="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold ml-1">${kdTokoText}</span>
                             <span class="block text-xs text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek}</span>
                             ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
                         </div>
@@ -421,7 +429,6 @@
             container.innerHTML = html;
         }
 
-        // FUNGSI INTI BARU: Membaca file spreadsheet harian dan mengunggahnya massal
         window.importSpreadsheet = function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -434,7 +441,6 @@
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     
-                    // Mengubah isi excel menjadi array object JSON
                     const excelRows = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (excelRows.length === 0) {
@@ -452,14 +458,13 @@
 
                     excelRows.forEach((row) => {
                         currentMaxId++;
-                        // Mapping data secara case-insensitive agar sesuai schema portal
                         const newLaptopItem = {
                             id: currentMaxId,
                             tanggal: tglInput,
+                            kode_toko: row.kode_toko || row.Kode_Toko || row.kode || '-',
                             merk: row.merk || row.Merk || row.brand || '-',
                             tipe: row.tipe || row.Tipe || row.model || '-',
                             sn: String(row.sn || row.SN || row.serial || '-'),
-                            harga_sewa: Number(row.harga_sewa || row.Harga || row.sewa || 0),
                             spek: row.spek || row.Spek || row.spesifikasi || '-',
                             status: row.status || row.Status || 'Tersedia'
                         };
@@ -469,7 +474,7 @@
                     });
 
                     showToast();
-                    e.target.value = ''; // Reset input file
+                    e.target.value = ''; 
                 } catch (err) {
                     alert("Gagal membaca dokumen spreadsheet: " + err.message);
                 }
@@ -504,7 +509,7 @@
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
                     
-                    if (key === 'biaya' || key === 'total_biaya' || key === 'harga_sewa') {
+                    if ((key === 'biaya' || key === 'total_biaya') && currentTab !== 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">Rp ${Number(val).toLocaleString('id-ID')}</td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
@@ -516,6 +521,8 @@
                         rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
                     } else if (key === 'sn' && currentTab === 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
+                    } else if (key === 'kode_toko' && currentTab === 'list_laptop') {
+                        rowHtml += `<td class="px-4 py-3 font-mono font-bold text-slate-700">${val}</td>`;
                     } else {
                         rowHtml += `<td class="px-4 py-3">${val}</td>`;
                     }
@@ -610,6 +617,10 @@
             } else if (currentTab === 'list_laptop') {
                 fieldsContainer.innerHTML = `
                     <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label>
+                        <input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label>
                         <input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
                     </div>
@@ -622,20 +633,16 @@
                         <input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Harga Sewa / Hari (Rp)</label>
-                        <input type="number" id="edit-harga_sewa" value="${targetItem.harga_sewa || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Singkat</label>
-                        <input type="text" id="edit-spek" value="${targetItem.spek || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label>
                         <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
                             <option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option>
                             <option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option>
                             <option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option>
                         </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Singkat</label>
+                        <input type="text" id="edit-spek" value="${targetItem.spek || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
                     </div>
                 `;
             } else if (currentTab === 'penyewaan') {
@@ -693,10 +700,10 @@
                 updatedData.progres = document.getElementById('edit-progres').value;
                 updatedData.status = document.getElementById('edit-status').value;
             } else if (currentTab === 'list_laptop') {
+                updatedData.kode_toko = document.getElementById('edit-kode_toko').value;
                 updatedData.merk = document.getElementById('edit-merk').value;
                 updatedData.tipe = document.getElementById('edit-tipe').value;
                 updatedData.sn = document.getElementById('edit-sn').value;
-                updatedData.harga_sewa = document.getElementById('edit-harga_sewa').value;
                 updatedData.spek = document.getElementById('edit-spek').value;
                 updatedData.status = document.getElementById('edit-status').value;
             } else if (currentTab === 'penyewaan') {
