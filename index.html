@@ -8,44 +8,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // ==========================================
-        const firebaseConfig = {
-    apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
-    authDomain: "teknisi-portal.firebaseapp.com",
-    projectId: "teknisi-portal",
-    storageBucket: "teknisi-portal.firebasestorage.app",
-    messagingSenderId: "535247512587",
-    appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
-  };
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "PASTE_API_KEY_ANDA_DI_SINI",
-            authDomain: "PASTE_AUTH_DOMAIN_ANDA_DI_SINI",
-            databaseURL: "PASTE_DATABASE_URL_ANDA_DI_SINI",
-            projectId: "PASTE_PROJECT_ID_ANDA_DI_SINI",
-            storageBucket: "PASTE_STORAGE_BUCKET_ANDA_DI_SINI",
-            messagingSenderId: "PASTE_MESSAGING_SENDER_ID_ANDA_DI_SINI",
-            appId: "PASTE_APP_ID_ANDA_DI_SINI"
-        };
+    // Isi konfigurasi Firebase Anda
+    const firebaseConfig = {
+        apiKey: "AIzaSy...",
+        authDomain: "operational-portal-...",
+        databaseURL: "https://operational-portal-...", 
+        projectId: "operational-portal-...",
+        storageBucket: "operational-portal-...",
+        messagingSenderId: "...",
+        appId: "..."
+    };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        // Tempel ke global window agar fungsi luar bisa akses script module
-        window.dbFirebase = db;
-        window.dbRef = ref;
-        window.dbSet = set;
-        window.dbPush = push;
-        window.dbOnValue = onValue;
-        window.dbRemove = remove;
-        
-        // Jalankan aplikasi setelah firebase siap
-        initApp();
-    </script>
+    // Tempel ke global window agar fungsi script biasa di bawah bisa panggil cloud
+    window.dbFirebase = db;
+    window.dbRef = ref;
+    window.dbSet = set;
+    window.dbPush = push;
+    window.dbOnValue = onValue;
+    window.dbRemove = remove;
+    
+    // Jalankan aplikasi
+    initApp();
+</script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
