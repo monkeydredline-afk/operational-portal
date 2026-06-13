@@ -12,16 +12,17 @@
         import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // =================================================================
-        // GANTI DI BAWAH INI DENGAN KODE KONFIGURASI DARI FIREBASE CONSOLE ANDA
+        // KONFIGURASI FIREBASE (SUDAH DITAMBAHKAN DATABASE URL)
         // =================================================================
         const firebaseConfig = {
-  apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
-  authDomain: "teknisi-portal.firebaseapp.com",
-  projectId: "teknisi-portal",
-  storageBucket: "teknisi-portal.firebasestorage.app",
-  messagingSenderId: "535247512587",
-  appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
-};
+            apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
+            authDomain: "teknisi-portal.firebaseapp.com",
+            databaseURL: "https://teknisi-portal-default-rtdb.asia-southeast1.firebasedatabase.app", // <-- UTAMA: Ditambahkan agar koneksi sukses
+            projectId: "teknisi-portal",
+            storageBucket: "teknisi-portal.firebasestorage.app",
+            messagingSenderId: "535247512587",
+            appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -39,7 +40,6 @@
         if (typeof initApp === 'function') {
             initApp();
         } else {
-            // Jika initApp belum ter-load, tunggu sampai DOM siap
             document.addEventListener("DOMContentLoaded", () => {
                 initApp();
             });
@@ -76,7 +76,7 @@
 
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
-                <h2 id="page-title" class="text-xl font-bold text-slate-800">Memuat Portal Cloud...</h2>
+                <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
                 <div class="text-sm bg-slate-100 px-3 py-1.5 rounded-full text-slate-600 font-medium">
                     <i class="fa-regular fa-calendar mr-1"></i> <span id="current-date"></span>
                 </div>
@@ -132,13 +132,9 @@
 
     <script>
         let currentTab = 'services';
-        let globalDataCloud = {}; // Menyimpan data tersinkron dari cloud Firebase
+        let globalDataCloud = {}; 
 
-        // Set Tanggal Hari Ini
-        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-        });
-
+        // Set Templates Form
         const fieldsTemplate = {
             services: `
                 <div>
@@ -174,7 +170,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Laptop yang Disewa</label>
                     <select id="dropdown-laptop" name="unit" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        </select>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Sewa</label>
@@ -254,19 +250,22 @@
             list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
         };
 
-        // Dipanggil otomatis setelah SDK Firebase Siap Load di Window
-        function initApp() {
-            // Pasang Listener Real-time Sinkronisasi Global untuk semua Tab/Node Firebase
-            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
-            let loadedCount = 0;
+        // Pemetaan urutan kolom yang benar saat membaca database Firebase
+        const dataKeysMapping = {
+            services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
+            penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_selesai', 'total_biaya', 'status'],
+            cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
+            list_laptop: ['id', 'tanggal', 'merk', 'tipe', 'spek', 'harga_sewa', 'status']
+        };
 
+        function initApp() {
+            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
             nodes.forEach(node => {
                 const nodeRef = window.dbRef(window.dbFirebase, node);
                 window.dbOnValue(nodeRef, (snapshot) => {
                     const value = snapshot.val();
                     globalDataCloud[node] = value ? Object.keys(value).map(key => ({ _firebaseKey: key, ...value[key] })) : [];
                     
-                    // Render ulang hanya jika tabel yang aktif mengalami pembaruan data di server
                     if (currentTab === node) {
                         renderTable();
                     }
@@ -275,13 +274,11 @@
                     }
                 });
             });
-
             switchTab('services');
         }
 
         function switchTab(tabName) {
             currentTab = tabName;
-            
             const titles = { 
                 services: "Input Log Services", 
                 penyewaan: "Input Data Penyewaan", 
@@ -327,7 +324,6 @@
             if(!dropdown) return;
 
             const masterLaptop = globalDataCloud['list_laptop'] || [];
-            
             if(masterLaptop.length === 0) {
                 dropdown.innerHTML = `<option value="" disabled selected>-- Tidak ada laptop di gudang (Isi di menu List Laptop) --</option>`;
                 return;
@@ -347,7 +343,6 @@
 
             const data = globalDataCloud[currentTab] || [];
             const searchQuery = document.getElementById('search-bar').value.toLowerCase();
-            
             tbody.innerHTML = '';
 
             const filteredData = data.filter(item => {
@@ -364,17 +359,15 @@
 
             filteredData.forEach((item) => {
                 let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
+                const keysOrder = dataKeysMapping[currentTab];
                 
-                // Urutan render sesuai susunan kolom header (kecuali Key Firebase dan Aksi)
-                Object.keys(item).forEach((key) => {
-                    if(key === '_firebaseKey') return; // Skip key internal firebase
+                // Render kolom secara urut berdasarkan index map yang benar
+                keysOrder.forEach((key) => {
+                    const val = item[key] !== undefined ? item[key] : '-';
                     
-                    const val = item[key];
-                    
-                    // Format khusus Rupiah pada kolom nominal uang (berdasarkan nama properti objek)
                     if (key === 'biaya' || key === 'total_biaya' || key === 'harga_sewa') {
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">Rp ${Number(val).toLocaleString('id-ID')}</td>`;
-                    } else if (key === 'status') { // Kolom Status berwarna
+                    } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
                         if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
@@ -385,7 +378,6 @@
                     }
                 });
 
-                // Tombol Aksi Hapus Data dari Server Cloud
                 rowHtml += `
                     <td class="px-4 py-3">
                         <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
@@ -407,8 +399,6 @@
 
             const formData = new FormData(e.target);
             const currentData = globalDataCloud[currentTab] || [];
-            
-            // Generate ID numerik berurut untuk kerapian visual tabel
             const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
             const tanggalHariIni = new Date().toLocaleDateString('id-ID');
 
@@ -421,7 +411,6 @@
                 newDataItem[key] = value;
             }
 
-            // PUSH DATA KE SERVER FIREBASE SECARA ONLINE
             const targetRef = window.dbRef(window.dbFirebase, currentTab);
             const newPostRef = window.dbPush(targetRef);
             
@@ -437,7 +426,7 @@
         }
 
         function deleteRow(firebaseKey) {
-            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen? Semua perangkat lain juga akan kehilangan data ini.")) {
+            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
                 const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
                 window.dbRemove(targetRowRef)
                     .catch((error) => {
