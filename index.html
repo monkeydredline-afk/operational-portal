@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Data Operasional (Online Real-time)</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome untuk Ikon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Firebase App dan Realtime Database SDK (v10) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -36,19 +39,18 @@
         window.dbOnValue = onValue;
         window.dbRemove = remove;
         
-        // Jalankan inisialisasi aplikasi cloud
-        if (typeof initApp === 'function') {
-            initApp();
-        } else {
-            document.addEventListener("DOMContentLoaded", () => {
+        // Jalankan inisialisasi aplikasi cloud setelah DOM siap
+        document.addEventListener("DOMContentLoaded", () => {
+            if (typeof initApp === 'function') {
                 initApp();
-            });
-        }
+            }
+        });
     </script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
     <div class="flex h-screen overflow-hidden">
+        <!-- SIDEBAR -->
         <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
             <div class="p-5">
                 <h1 class="text-xl font-bold tracking-wider text-cyan-400 mb-8">
@@ -74,6 +76,7 @@
             </div>
         </div>
 
+        <!-- MAIN AREA -->
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
@@ -84,13 +87,15 @@
 
             <main class="p-6 max-w-5xl w-full mx-auto space-y-6">
                 
+                <!-- FORM CONTAINER -->
                 <div class="bg-white rounded-xl shadow-sm border p-6">
                     <h3 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-pen-to-square text-cyan-600"></i> Form Input Data
                     </h3>
                     <form id="operational-form" onsubmit="handleSubmit(event)">
-                        <div id="form-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            </div>
+                        <!-- STRUKTUR DIV DIBERSIHKAN AGAR BISA DIISI JS -->
+                        <div id="form-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        
                         <div class="mt-6 flex justify-end">
                             <button type="submit" class="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition flex items-center space-x-2">
                                 <i class="fa-solid fa-cloud-arrow-up"></i> <span>Simpan Real-time</span>
@@ -99,6 +104,7 @@
                     </form>
                 </div>
 
+                <!-- TABLE MONITORING CONTAINER -->
                 <div class="bg-white rounded-xl shadow-sm border p-6 overflow-hidden">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
@@ -113,7 +119,8 @@
                     <div class="overflow-x-auto border rounded-lg">
                         <table class="w-full text-left border-collapse">
                             <thead id="table-head" class="bg-slate-50 text-slate-600 text-sm font-semibold uppercase tracking-wider border-b">
-                                </thead>
+                                <!-- Kolom diisi dinamis oleh JS -->
+                            </thead>
                             <tbody id="table-body" class="divide-y text-sm text-gray-700 bg-white">
                                 <tr><td class="px-4 py-8 text-center text-gray-400">Menghubungkan ke server Firebase...</td></tr>
                             </tbody>
@@ -121,6 +128,7 @@
                     </div>
                 </div>
 
+                <!-- TOAST NOTIFICATION -->
                 <div id="toast" class="hidden fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center space-x-3 transition duration-300">
                     <i class="fa-solid fa-circle-check text-xl"></i>
                     <span>Data berhasil disimpan online di Database Cloud!</span>
@@ -179,7 +187,6 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Laptop yang Disewa</label>
                     <select id="dropdown-laptop" name="unit" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="" disabled selected>Mengambil data unit dari cloud...</option>
                     </select>
                 </div>
                 <div>
@@ -268,7 +275,7 @@
         };
 
         function initApp() {
-            // Jalankan render UI dasar terlebih dahulu agar kolom input tidak kosong/stuck
+            // Pasang form services sejak awal agar form langsung ter-render aman
             switchTab('services');
 
             const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
@@ -298,7 +305,6 @@
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)"
             };
             
-            // Render judul halaman dan struktur form input secara instan
             document.getElementById('page-title').innerText = titles[tabName];
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
