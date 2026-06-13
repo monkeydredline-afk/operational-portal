@@ -427,8 +427,16 @@
                     }
                 });
 
+                // REVISI BAGIAN SEKSI AKSI: Ditambahkan tombol Selesai khusus tab Penyewaan
+                rowHtml += `<td class="px-4 py-3 flex items-center space-x-2">`;
+                if (currentTab === 'penyewaan' && item.status !== 'Lunas' && item.status !== 'Selesai') {
+                    rowHtml += `
+                        <button onclick="markAsSelesai('${item._firebaseKey}')" class="text-emerald-500 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition" title="Selesai / Kembalikan Unit">
+                            <i class="fa-solid fa-circle-check text-base"></i>
+                        </button>
+                    `;
+                }
                 rowHtml += `
-                    <td class="px-4 py-3">
                         <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
@@ -437,6 +445,33 @@
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
+        }
+
+        // FUNGSI BARU: Mengubah status transaksi ke Lunas dan mengembalikan laptop ke Tersedia
+        window.markAsSelesai = function(firebaseKey) {
+            if(confirm("Apakah unit laptop sudah dikembalikan dengan aman dan pembayaran lunas?")) {
+                const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                
+                if (sewaItem) {
+                    // 1. Kembalikan semua unit laptop terkait menjadi 'Tersedia'
+                    if (sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                    
+                    // 2. Ubah status invoice penyewaan menjadi Lunas
+                    const sewaStatusRef = window.dbRef(window.dbFirebase, `penyewaan/${firebaseKey}`);
+                    window.dbUpdate(sewaStatusRef, { status: "Lunas" })
+                        .then(() => {
+                            showToast();
+                        })
+                        .catch((error) => {
+                            alert("Gagal memperbarui status sewa: " + error.message);
+                        });
+                }
+            }
         }
 
         function handleSubmit(e) {
@@ -490,7 +525,8 @@
             
             window.dbSet(newPostRef, newDataItem)
                 .then(() => {
-                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0) {
+                    // Jika diinput langsung dengan status 'Lunas', laptop tidak perlu diubah ke 'Disewa'
+                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0 && newDataItem.status !== 'Lunas') {
                         laptopKeysToUpdate.forEach(laptopKey => {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
                             window.dbUpdate(laptopStatusRef, { status: "Disewa" });
@@ -510,7 +546,8 @@
             if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
                 if (currentTab === 'penyewaan') {
                     const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
-                    if (sewaItem && sewaItem._linkedLaptopKeys) {
+                    // Kembalikan status ke 'Tersedia' hanya jika transaksi yang dihapus statusnya belum selesai/lunas
+                    if (sewaItem && sewaItem._linkedLaptopKeys && sewaItem.status !== 'Lunas') {
                         sewaItem._linkedLaptopKeys.forEach(laptopKey => {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
                             window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
