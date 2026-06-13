@@ -8,35 +8,44 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-    // Isi konfigurasi Firebase Anda
-    const firebaseConfig = {
-        apiKey: "AIzaSy...",
-        authDomain: "operational-portal-...",
-        databaseURL: "https://operational-portal-...", 
-        projectId: "operational-portal-...",
-        storageBucket: "operational-portal-...",
-        messagingSenderId: "...",
-        appId: "..."
-    };
+        // =================================================================
+        // GANTI DI BAWAH INI DENGAN KODE KONFIGURASI DARI FIREBASE CONSOLE ANDA
+        // =================================================================
+        const firebaseConfig = {
+            apiKey: "PASTE_API_KEY_RESMI_ANDA",
+            authDomain: "PASTE_AUTH_DOMAIN_RESMI_ANDA",
+            databaseURL: "PASTE_DATABASE_URL_RESMI_ANDA", // Ini wajib terisi agar data masuk
+            projectId: "PASTE_PROJECT_ID_RESMI_ANDA",
+            storageBucket: "PASTE_STORAGE_BUCKET_RESMI_ANDA",
+            messagingSenderId: "PASTE_MESSAGING_SENDER_RESMI_ANDA",
+            appId: "PASTE_APP_ID_RESMI_ANDA"
+        };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
 
-    // Tempel ke global window agar fungsi script biasa di bawah bisa panggil cloud
-    window.dbFirebase = db;
-    window.dbRef = ref;
-    window.dbSet = set;
-    window.dbPush = push;
-    window.dbOnValue = onValue;
-    window.dbRemove = remove;
-    
-    // Jalankan aplikasi
-    initApp();
-</script>
+        // Pasang ke global window agar script di bagian bawah file bisa mengaksesnya
+        window.dbFirebase = db;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbPush = push;
+        window.dbOnValue = onValue;
+        window.dbRemove = remove;
+        
+        // Jalankan inisialisasi aplikasi cloud
+        if (typeof initApp === 'function') {
+            initApp();
+        } else {
+            // Jika initApp belum ter-load, tunggu sampai DOM siap
+            document.addEventListener("DOMContentLoaded", () => {
+                initApp();
+            });
+        }
+    </script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
