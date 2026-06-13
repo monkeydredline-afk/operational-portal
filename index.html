@@ -6,60 +6,6 @@
     <title>Portal Data Operasional (Online Real-time)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-        // =================================================================
-        // KONFIGURASI FIREBASE
-        // =================================================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
-            authDomain: "teknisi-portal.firebaseapp.com",
-            databaseURL: "https://teknisi-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "teknisi-portal",
-            storageBucket: "teknisi-portal.firebasestorage.app",
-            messagingSenderId: "535247512587",
-            appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // Pasang ke global window dengan aman
-        window.dbFirebase = db;
-        window.dbRef = ref;
-        window.dbSet = set;
-        window.dbPush = push;
-        window.dbOnValue = onValue;
-        window.dbRemove = remove;
-        
-        // Langsung jalankan setelah Firebase siap dan DOM selesai dimuat
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", () => {
-                initApp();
-                updateCurrentDate();
-            });
-        } else {
-            initApp();
-            updateCurrentDate();
-        }
-
-        // Fungsi menampilkan tanggal hari ini di header
-        function updateCurrentDate() {
-            const dateEl = document.getElementById('current-date');
-            if (dateEl) {
-                dateEl.innerText = new Date().toLocaleDateString('id-ID', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                });
-            }
-        }
-    </script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
@@ -70,22 +16,22 @@
                     <i class="fa-solid fa-screwdriver-wrench mr-2"></i>Tools Portal
                 </h1>
                 <nav class="space-y-2">
-                    <button id="btn-services" onclick="switchTab('services')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <button id="btn-services" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-laptop-medical w-6 text-center"></i> <span>Log Services</span>
                     </button>
-                    <button id="btn-penyewaan" onclick="switchTab('penyewaan')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <button id="btn-penyewaan" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-boxes-packing w-6 text-center"></i> <span>Penyewaan</span>
                     </button>
-                    <button id="btn-cctv" onclick="switchTab('cctv')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <button id="btn-cctv" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-video w-6 text-center"></i> <span>Proyek CCTV</span>
                     </button>
-                    <button id="btn-list_laptop" onclick="switchTab('list_laptop')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <button id="btn-list_laptop" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-laptop w-6 text-center"></i> <span>List Laptop</span>
                     </button>
                 </nav>
             </div>
             <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
-                V2.1 Cloud Operational System
+                V2.3 Cloud Operational System
             </div>
         </div>
 
@@ -103,7 +49,7 @@
                     <h3 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-pen-to-square text-cyan-600"></i> Form Input Data
                     </h3>
-                    <form id="operational-form" onsubmit="handleSubmit(event)">
+                    <form id="operational-form">
                         <div id="form-fields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             </div>
                         
@@ -122,7 +68,7 @@
                         </h3>
                         <div class="relative w-full sm:w-64">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400 text-sm"></i>
-                            <input type="text" id="search-bar" oninput="renderTable()" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            <input type="text" id="search-bar" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                         </div>
                     </div>
 
@@ -137,339 +83,4 @@
                     </div>
                 </div>
 
-                <div id="toast" class="hidden fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center space-x-3 transition duration-300 z-50">
-                    <i class="fa-solid fa-circle-check text-xl"></i>
-                    <span>Data berhasil disimpan online di Database Cloud!</span>
-                </div>
-
-            </main>
-        </div>
-    </div>
-
-    <script>
-        let currentTab = 'services';
-        let globalDataCloud = {
-            services: [],
-            penyewaan: [],
-            cctv: [],
-            list_laptop: []
-        }; 
-
-        const fieldsTemplate = {
-            services: `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan</label>
-                    <input type="text" name="pelanggan" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Perangkat (Laptop/PC/dll)</label>
-                    <input type="text" name="perangkat" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Gejala / Kerusakan</label>
-                    <textarea name="kerusakan" rows="2" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none"></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Estimasi Biaya (Rp)</label>
-                    <input type="number" name="biaya" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Antrean">Antrean</option>
-                        <option value="Proses">Proses Pengecekan</option>
-                        <option value="Selesai">Selesai</option>
-                    </select>
-                </div>
-            `,
-            penyewaan: `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penyewa</label>
-                    <input type="text" name="penyewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit Laptop yang Disewa</label>
-                    <select id="dropdown-laptop" name="unit" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Sewa</label>
-                    <input type="date" name="tgl_selesai" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Total Biaya Sewa (Rp)</label>
-                    <input type="number" name="total_biaya" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Pembayaran</label>
-                    <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Belum Bayar">Belum Bayar</option>
-                        <option value="DP 50%">DP 50%</option>
-                        <option value="Lunas">Lunas</option>
-                    </select>
-                </div>
-            `,
-            cctv: `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Klien / Instansi</label>
-                    <input type="text" name="klien" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi Pemasangan</label>
-                    <input type="text" name="lokasi" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah Kamera CCTV</label>
-                    <input type="number" name="jumlah_cctv" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Progres Kerja</label>
-                    <input type="text" name="progres" value="Penarikan Kabel" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Proyek</label>
-                    <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Survei">Tahap Survei</option>
-                        <option value="Pengerjaan">Sedang Dikerjakan</option>
-                        <option value="Selesai">Selesai / Serah Terima</option>
-                    </select>
-                </div>
-            `,
-            list_laptop: `
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" placeholder="Contoh: Lenovo, ASUS, Dell" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" placeholder="Contoh: ThinkPad T480, ROG G15" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi Singkat</label>
-                    <input type="text" name="spek" placeholder="Contoh: Core i5 Gen 8 / RAM 8GB / SSD 256GB" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Harga Sewa per Hari (Rp)</label>
-                    <input type="number" name="harga_sewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Ketersediaan</label>
-                    <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Tersedia">Ready / Tersedia</option>
-                        <option value="Disewa">Sedang Disewa</option>
-                        <option value="Maintenance">Perbaikan / Rusak</option>
-                    </select>
-                </div>
-            `
-        };
-
-        const tableHeaders = {
-            services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
-            penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
-            cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
-            list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
-        };
-
-        const dataKeysMapping = {
-            services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
-            penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_selesai', 'total_biaya', 'status'],
-            cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
-            list_laptop: ['id', 'tanggal', 'merk', 'tipe', 'spek', 'harga_sewa', 'status']
-        };
-
-        function initApp() {
-            switchTab('services');
-
-            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
-            nodes.forEach(node => {
-                // Beri jeda kecil jika modul eksternal firebase sedikit terlambat menempel di window
-                setTimeout(() => {
-                    if (!window.dbFirebase) return;
-                    const nodeRef = window.dbRef(window.dbFirebase, node);
-                    window.dbOnValue(nodeRef, (snapshot) => {
-                        const value = snapshot.val();
-                        globalDataCloud[node] = value ? Object.keys(value).map(key => ({ _firebaseKey: key, ...value[key] })) : [];
-                        
-                        if (currentTab === node) {
-                            renderTable();
-                        }
-                        if (currentTab === 'penyewaan') {
-                            populateLaptopDropdown();
-                        }
-                    });
-                }, 300);
-            });
-        }
-
-        function switchTab(tabName) {
-            currentTab = tabName;
-            const titles = { 
-                services: "Input Log Services", 
-                penyewaan: "Input Data Penyewaan", 
-                cctv: "Input Proyek CCTV Pemasangan",
-                list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)"
-            };
-            
-            const titleEl = document.getElementById('page-title');
-            const fieldsEl = document.getElementById('form-fields');
-            const searchEl = document.getElementById('search-bar');
-
-            if(titleEl) titleEl.innerText = titles[tabName];
-            if(fieldsEl) fieldsEl.innerHTML = fieldsTemplate[tabName];
-            if(searchEl) searchEl.value = ''; 
-            
-            ['services', 'penyewaan', 'cctv', 'list_laptop'].forEach(tab => {
-                const btn = document.getElementById(`btn-${tab}`);
-                if(btn) {
-                    if(tab === tabName) {
-                        btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-slate-800 text-cyan-400 font-medium transition";
-                    } else {
-                        btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition";
-                    }
-                }
-            });
-
-            renderTableHeader();
-            renderTable();
-
-            if(tabName === 'penyewaan') {
-                populateLaptopDropdown();
-            }
-        }
-
-        function renderTableHeader() {
-            const head = document.getElementById('table-head');
-            if(!head) return;
-            let html = '<tr>';
-            tableHeaders[currentTab].forEach(header => {
-                html += `<th class="px-4 py-3 font-semibold">${header}</th>`;
-            });
-            html += '</tr>';
-            head.innerHTML = html;
-        }
-
-        function populateLaptopDropdown() {
-            const dropdown = document.getElementById('dropdown-laptop');
-            if(!dropdown) return;
-
-            const masterLaptop = globalDataCloud['list_laptop'] || [];
-            if(masterLaptop.length === 0) {
-                dropdown.innerHTML = `<option value="" disabled selected>-- Tidak ada laptop di gudang (Isi di menu List Laptop) --</option>`;
-                return;
-            }
-
-            let html = `<option value="" disabled selected>-- Pilih Unit Laptop --</option>`;
-            masterLaptop.forEach(lap => {
-                const infoText = `${lap.merk} ${lap.tipe} (${lap.spek})`;
-                html += `<option value="${infoText}" ${lap.status !== 'Tersedia' ? 'disabled class="text-gray-400 bg-gray-100"' : ''}>${infoText} ${lap.status !== 'Tersedia' ? `[${lap.status}]` : ''}</option>`;
-            });
-            dropdown.innerHTML = html;
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('table-body');
-            if(!tbody) return;
-
-            const data = globalDataCloud[currentTab] || [];
-            const searchBar = document.getElementById('search-bar');
-            const searchQuery = searchBar ? searchBar.value.toLowerCase() : '';
-            tbody.innerHTML = '';
-
-            const filteredData = data.filter(item => {
-                return Object.values(item).some(val => {
-                    if (typeof val === 'object') return false;
-                    return String(val).toLowerCase().includes(searchQuery);
-                });
-            });
-
-            if(filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${tableHeaders[currentTab].length}" class="px-4 py-8 text-center text-gray-400 bg-gray-50 font-medium"><i class="fa-solid fa-folder-open text-xl block mb-2"></i>Belum ada data tersedia di cloud</td></tr>`;
-                return;
-            }
-
-            filteredData.forEach((item) => {
-                let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
-                const keysOrder = dataKeysMapping[currentTab];
-                
-                keysOrder.forEach((key) => {
-                    const val = item[key] !== undefined ? item[key] : '-';
-                    
-                    if (key === 'biaya' || key === 'total_biaya' || key === 'harga_sewa') {
-                        rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">Rp ${Number(val).toLocaleString('id-ID')}</td>`;
-                    } else if (key === 'status') { 
-                        let badgeColor = "bg-amber-100 text-amber-800";
-                        if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
-                        if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
-                        if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
-                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
-                    } else {
-                        rowHtml += `<td class="px-4 py-3">${val}</td>`;
-                    }
-                });
-
-                rowHtml += `
-                    <td class="px-4 py-3">
-                        <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                rowHtml += `</tr>`;
-                tbody.innerHTML += rowHtml;
-            });
-        }
-
-        function handleSubmit(e) {
-            e.preventDefault();
-            if (!window.dbFirebase) {
-                alert("Koneksi cloud belum siap, silakan tunggu 1-2 detik atau muat ulang halaman.");
-                return;
-            }
-
-            const formData = new FormData(e.target);
-            const currentData = globalDataCloud[currentTab] || [];
-            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
-            const tanggalHariIni = new Date().toLocaleDateString('id-ID');
-
-            const newDataItem = {
-                id: nextId,
-                tanggal: tanggalHariIni
-            };
-
-            for (let [key, value] of formData.entries()) {
-                newDataItem[key] = value;
-            }
-
-            const targetRef = window.dbRef(window.dbFirebase, currentTab);
-            const newPostRef = window.dbPush(targetRef);
-            
-            window.dbSet(newPostRef, newDataItem)
-                .then(() => {
-                    showToast();
-                    e.target.reset();
-                    if(currentTab === 'penyewaan') populateLaptopDropdown();
-                })
-                .catch((error) => {
-                    alert("Gagal menyimpan ke cloud: " + error.message);
-                });
-        }
-
-        function deleteRow(firebaseKey) {
-            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
-                const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
-                window.dbRemove(targetRowRef)
-                    .catch((error) => {
-                        alert("Gagal menghapus data dari cloud: " + error.message);
-                    });
-            }
-        }
-
-        function showToast() {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-        }
-    </script>
-</body>
-</html>
+                <div id="toast" class="hidden fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center space-
