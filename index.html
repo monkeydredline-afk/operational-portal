@@ -129,6 +129,30 @@
         </div>
     </div>
 
+    <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
+                <h3 class="font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Edit Data Real-time
+                </h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </header>
+            <form id="edit-form" onsubmit="handleUpdateSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="edit-firebase-key">
+                <div id="edit-modal-fields" class="grid grid-cols-1 gap-4">
+                    </div>
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 font-medium transition">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Perbarui Online
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let currentTab = 'services';
         let globalDataCloud = {
@@ -427,7 +451,7 @@
                     }
                 });
 
-                // REVISI BAGIAN SEKSI AKSI: Ditambahkan tombol Selesai khusus tab Penyewaan
+                // SEKSI AKSI: Sudah ditambahkan tombol Edit di samping tombol hapus
                 rowHtml += `<td class="px-4 py-3 flex items-center space-x-2">`;
                 if (currentTab === 'penyewaan' && item.status !== 'Lunas' && item.status !== 'Selesai') {
                     rowHtml += `
@@ -436,24 +460,216 @@
                         </button>
                     `;
                 }
+                
+                // Tombol Edit Baru
                 rowHtml += `
-                        <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
+                    <button onclick="openEditModal('${item._firebaseKey}')" class="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-50 transition" title="Edit Data">
+                        <i class="fa-solid fa-pen-to-square text-base"></i>
+                    </button>
+                    <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>`;
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
         }
 
-        // FUNGSI BARU: Mengubah status transaksi ke Lunas dan mengembalikan laptop ke Tersedia
+        // FUNGSI BARU: Membuka Modal Pop-up Edit dan memuat data lama
+        window.openEditModal = function(firebaseKey) {
+            const currentDataList = globalDataCloud[currentTab] || [];
+            const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
+            
+            if(!targetItem) return;
+
+            document.getElementById('edit-firebase-key').value = firebaseKey;
+            const fieldsContainer = document.getElementById('edit-modal-fields');
+            fieldsContainer.innerHTML = '';
+
+            // Render form berdasarkan tab aktif saat ini
+            if (currentTab === 'services') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pelanggan</label>
+                        <input type="text" id="edit-pelanggan" value="${targetItem.pelanggan || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Perangkat</label>
+                        <input type="text" id="edit-perangkat" value="${targetItem.perangkat || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Gejala / Kerusakan</label>
+                        <textarea id="edit-kerusakan" rows="2" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.kerusakan || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Estimasi Biaya (Rp)</label>
+                        <input type="number" id="edit-biaya" value="${targetItem.biaya || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Antrean" ${targetItem.status === 'Antrean' ? 'selected' : ''}>Antrean</option>
+                            <option value="Proses" ${targetItem.status === 'Proses' ? 'selected' : ''}>Proses Pengecekan</option>
+                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        </select>
+                    </div>
+                `;
+            } else if (currentTab === 'cctv') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Klien / Instansi</label>
+                        <input type="text" id="edit-klien" value="${targetItem.klien || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Lokasi Pemasangan</label>
+                        <input type="text" id="edit-lokasi" value="${targetItem.lokasi || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah Kamera CCTV</label>
+                        <input type="number" id="edit-jumlah_cctv" value="${targetItem.jumlah_cctv || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Progres Kerja</label>
+                        <input type="text" id="edit-progres" value="${targetItem.progres || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Proyek</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Survei" ${targetItem.status === 'Survei' ? 'selected' : ''}>Tahap Survei</option>
+                            <option value="Pengerjaan" ${targetItem.status === 'Pengerjaan' ? 'selected' : ''}>Sedang Dikerjakan</option>
+                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai / Serah Terima</option>
+                        </select>
+                    </div>
+                `;
+            } else if (currentTab === 'list_laptop') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label>
+                        <input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label>
+                        <input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label>
+                        <input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Harga Sewa / Hari (Rp)</label>
+                        <input type="number" id="edit-harga_sewa" value="${targetItem.harga_sewa || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Singkat</label>
+                        <input type="text" id="edit-spek" value="${targetItem.spek || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option>
+                            <option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option>
+                            <option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option>
+                        </select>
+                    </div>
+                `;
+            } else if (currentTab === 'penyewaan') {
+                // Untuk penyewaan, unit checkbox tidak di-edit di sini agar tidak memutus jalur otomatisasi relasi status SN
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Penyewa</label>
+                        <input type="text" id="edit-penyewa" value="${targetItem.penyewa || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Selesai Sewa</label>
+                        <input type="date" id="edit-tgl_selesai" value="${targetItem.tgl_selesai || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Total Biaya Sewa (Rp)</label>
+                        <input type="number" id="edit-total_biaya" value="${targetItem.total_biaya || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label>
+                        <select id="edit-status" class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option>
+                            <option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option>
+                            <option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-50 border p-3 rounded-lg text-[11px] text-slate-500">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-0.5"></i> Info: Daftar Laptop ber-SN yang disewa tidak dapat diganti dari menu ini demi menjaga keakuratan stok fisik real-time gudang Anda.
+                    </div>
+                `;
+            }
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        window.closeEditModal = function() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        // FUNGSI BARU: Menyimpan hasil modifikasi data kembali ke Firebase RTDB
+        window.handleUpdateSubmit = function(e) {
+            e.preventDefault();
+            const firebaseKey = document.getElementById('edit-firebase-key').value;
+            if(!firebaseKey || !window.dbFirebase) return;
+
+            let updatedData = {};
+
+            if (currentTab === 'services') {
+                updatedData.pelanggan = document.getElementById('edit-pelanggan').value;
+                updatedData.perangkat = document.getElementById('edit-perangkat').value;
+                updatedData.kerusakan = document.getElementById('edit-kerusakan').value;
+                updatedData.biaya = document.getElementById('edit-biaya').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'cctv') {
+                updatedData.klien = document.getElementById('edit-klien').value;
+                updatedData.lokasi = document.getElementById('edit-lokasi').value;
+                updatedData.jumlah_cctv = document.getElementById('edit-jumlah_cctv').value;
+                updatedData.progres = document.getElementById('edit-progres').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'list_laptop') {
+                updatedData.merk = document.getElementById('edit-merk').value;
+                updatedData.tipe = document.getElementById('edit-tipe').value;
+                updatedData.sn = document.getElementById('edit-sn').value;
+                updatedData.harga_sewa = document.getElementById('edit-harga_sewa').value;
+                updatedData.spek = document.getElementById('edit-spek').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'penyewaan') {
+                const newStatus = document.getElementById('edit-status').value;
+                updatedData.penyewa = document.getElementById('edit-penyewa').value;
+                updatedData.tgl_selesai = document.getElementById('edit-tgl_selesai').value;
+                updatedData.total_biaya = document.getElementById('edit-total_biaya').value;
+                updatedData.status = newStatus;
+
+                // Jika di-edit dan diubah langsung ke status 'Lunas', trigger pembebasan SN laptop
+                if (newStatus === 'Lunas') {
+                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                    if (sewaItem && sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                }
+            }
+
+            const targetItemRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
+            window.dbUpdate(targetItemRef, updatedData)
+                .then(() => {
+                    closeEditModal();
+                    showToast();
+                })
+                .catch((error) => {
+                    alert("Gagal memperbarui data: " + error.message);
+                });
+        }
+
         window.markAsSelesai = function(firebaseKey) {
             if(confirm("Apakah unit laptop sudah dikembalikan dengan aman dan pembayaran lunas?")) {
                 const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
                 
                 if (sewaItem) {
-                    // 1. Kembalikan semua unit laptop terkait menjadi 'Tersedia'
                     if (sewaItem._linkedLaptopKeys) {
                         sewaItem._linkedLaptopKeys.forEach(laptopKey => {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
@@ -461,7 +677,6 @@
                         });
                     }
                     
-                    // 2. Ubah status invoice penyewaan menjadi Lunas
                     const sewaStatusRef = window.dbRef(window.dbFirebase, `penyewaan/${firebaseKey}`);
                     window.dbUpdate(sewaStatusRef, { status: "Lunas" })
                         .then(() => {
@@ -525,7 +740,6 @@
             
             window.dbSet(newPostRef, newDataItem)
                 .then(() => {
-                    // Jika diinput langsung dengan status 'Lunas', laptop tidak perlu diubah ke 'Disewa'
                     if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0 && newDataItem.status !== 'Lunas') {
                         laptopKeysToUpdate.forEach(laptopKey => {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
@@ -546,7 +760,6 @@
             if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
                 if (currentTab === 'penyewaan') {
                     const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
-                    // Kembalikan status ke 'Tersedia' hanya jika transaksi yang dihapus statusnya belum selesai/lunas
                     if (sewaItem && sewaItem._linkedLaptopKeys && sewaItem.status !== 'Lunas') {
                         sewaItem._linkedLaptopKeys.forEach(laptopKey => {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
