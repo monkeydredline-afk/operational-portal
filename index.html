@@ -12,12 +12,12 @@
         import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // =================================================================
-        // KONFIGURASI FIREBASE (SUDAH DITAMBAHKAN DATABASE URL)
+        // KONFIGURASI FIREBASE (SUDAH AKTIF & SESUAI)
         // =================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
             authDomain: "teknisi-portal.firebaseapp.com",
-            databaseURL: "https://teknisi-portal-default-rtdb.asia-southeast1.firebasedatabase.app", // <-- UTAMA: Ditambahkan agar koneksi sukses
+            databaseURL: "https://teknisi-portal-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "teknisi-portal",
             storageBucket: "teknisi-portal.firebasestorage.app",
             messagingSenderId: "535247512587",
@@ -132,9 +132,18 @@
 
     <script>
         let currentTab = 'services';
-        let globalDataCloud = {}; 
+        let globalDataCloud = {
+            services: [],
+            penyewaan: [],
+            cctv: [],
+            list_laptop: []
+        }; 
 
-        // Set Templates Form
+        // Set Tanggal Hari Ini
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
         const fieldsTemplate = {
             services: `
                 <div>
@@ -170,6 +179,7 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Laptop yang Disewa</label>
                     <select id="dropdown-laptop" name="unit" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <option value="" disabled selected>Mengambil data unit dari cloud...</option>
                     </select>
                 </div>
                 <div>
@@ -250,7 +260,6 @@
             list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
         };
 
-        // Pemetaan urutan kolom yang benar saat membaca database Firebase
         const dataKeysMapping = {
             services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_selesai', 'total_biaya', 'status'],
@@ -259,8 +268,12 @@
         };
 
         function initApp() {
+            // Jalankan render UI dasar terlebih dahulu agar kolom input tidak kosong/stuck
+            switchTab('services');
+
             const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
             nodes.forEach(node => {
+                if (!window.dbFirebase) return;
                 const nodeRef = window.dbRef(window.dbFirebase, node);
                 window.dbOnValue(nodeRef, (snapshot) => {
                     const value = snapshot.val();
@@ -269,12 +282,11 @@
                     if (currentTab === node) {
                         renderTable();
                     }
-                    if (currentTab === 'penyewaan' && node === 'list_laptop') {
+                    if (currentTab === 'penyewaan') {
                         populateLaptopDropdown();
                     }
                 });
             });
-            switchTab('services');
         }
 
         function switchTab(tabName) {
@@ -286,6 +298,7 @@
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)"
             };
             
+            // Render judul halaman dan struktur form input secara instan
             document.getElementById('page-title').innerText = titles[tabName];
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
@@ -311,6 +324,7 @@
 
         function renderTableHeader() {
             const head = document.getElementById('table-head');
+            if(!head) return;
             let html = '<tr>';
             tableHeaders[currentTab].forEach(header => {
                 html += `<th class="px-4 py-3 font-semibold">${header}</th>`;
@@ -361,7 +375,6 @@
                 let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
                 const keysOrder = dataKeysMapping[currentTab];
                 
-                // Render kolom secara urut berdasarkan index map yang benar
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
                     
@@ -437,6 +450,7 @@
 
         function showToast() {
             const toast = document.getElementById('toast');
+            if(!toast) return;
             toast.classList.remove('hidden');
             setTimeout(() => { toast.classList.add('hidden'); }, 3000);
         }
