@@ -12,7 +12,7 @@
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // =================================================================
-        // KONFIGURASI FIREBASE ALAMAT ASLI (DATA LAMA DIJAMIN AMUNCUL)
+        // KONFIGURASI FIREBASE ALAMAT ASLI (DATA LAMA DIJAMIN MUNCUL)
         // =================================================================
         const firebaseConfig = {
     apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
@@ -36,7 +36,7 @@
         window.dbPush = push;
         window.dbOnValue = onValue;
         window.dbRemove = remove;
-        window.dbUpdate = update; // Tambahan fungsi update untuk mengubah status laptop
+        window.dbUpdate = update;
         
         // Jalankan inisialisasi aplikasi cloud setelah DOM siap
         document.addEventListener("DOMContentLoaded", () => {
@@ -49,7 +49,6 @@
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
     <div class="flex h-screen overflow-hidden">
-        <!-- SIDEBAR -->
         <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
             <div class="p-5">
                 <h1 class="text-xl font-bold tracking-wider text-cyan-400 mb-8">
@@ -75,7 +74,6 @@
             </div>
         </div>
 
-        <!-- MAIN CONTENT -->
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
@@ -86,7 +84,6 @@
 
             <main class="p-6 max-w-5xl w-full mx-auto space-y-6">
                 
-                <!-- FORM INPUT -->
                 <div class="bg-white rounded-xl shadow-sm border p-6">
                     <h3 class="text-lg font-semibold text-slate-700 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-pen-to-square text-cyan-600"></i> Form Input Data
@@ -102,7 +99,6 @@
                     </form>
                 </div>
 
-                <!-- TABLE DATA -->
                 <div class="bg-white rounded-xl shadow-sm border p-6 overflow-hidden">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
@@ -125,7 +121,6 @@
                     </div>
                 </div>
 
-                <!-- TOAST NOTIFICATION -->
                 <div id="toast" class="hidden fixed bottom-5 right-5 bg-emerald-600 text-white px-5 py-3 rounded-lg shadow-lg flex items-center space-x-3 transition duration-300 z-50">
                     <i class="fa-solid fa-circle-check text-xl"></i>
                     <span>Data berhasil disimpan online di Database Cloud!</span>
@@ -185,11 +180,14 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Selesai Sewa</label>
                     <input type="date" name="tgl_selesai" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Unit Laptop yang Tersedia (Bisa Centang Banyak)</label>
-                    <div id="checkbox-laptop-container" class="border border-gray-300 rounded-xl p-3 max-h-52 overflow-y-auto bg-white space-y-2">
-                        <!-- List pilihan laptop ber-SN di-render otomatis via JS -->
+                <div class="md:col-span-2 space-y-1.5">
+                    <label class="block text-sm font-medium text-gray-700">Pilih Unit Laptop yang Tersedia (Bisa Centang Banyak)</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="search-form-laptop" oninput="populateLaptopCheckboxes()" placeholder="Ketik Merk, Tipe, atau SN untuk mencari..." class="w-full pl-8 pr-4 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none bg-slate-50">
                     </div>
+                    <div id="checkbox-laptop-container" class="border border-gray-300 rounded-xl p-3 max-h-52 overflow-y-auto bg-white space-y-2">
+                        </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Total Biaya Sewa (Rp)</label>
@@ -340,7 +338,7 @@
             head.innerHTML = html;
         }
 
-        // FUNGSI: Render checkbox laptop berdasarkan item spesifik ber-SN unik
+        // PERBAIKAN & PENAMBAHAN: Fungsi render checkbox sekarang mendukung filter ketik (Search Bar)
         function populateLaptopCheckboxes() {
             const container = document.getElementById('checkbox-laptop-container');
             if(!container) return;
@@ -351,8 +349,26 @@
                 return;
             }
 
+            // Ambil query pencarian form jika kolom input pencariannya ada
+            const searchInput = document.getElementById('search-form-laptop');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
+            // Filter data secara case-insensitive
+            const filteredLaptop = masterLaptop.filter(lap => {
+                const brand = (lap.merk || '').toLowerCase();
+                const type = (lap.tipe || '').toLowerCase();
+                const sn = (lap.sn || '').toLowerCase();
+                const spec = (lap.spek || '').toLowerCase();
+                return brand.includes(searchQuery) || type.includes(searchQuery) || sn.includes(searchQuery) || spec.includes(searchQuery);
+            });
+
+            if(filteredLaptop.length === 0) {
+                container.innerHTML = `<span class="text-xs text-gray-400 italic block py-2 text-center">Unit laptop tidak ditemukan.</span>`;
+                return;
+            }
+
             let html = '';
-            masterLaptop.forEach((lap) => {
+            filteredLaptop.forEach((lap) => {
                 const snText = lap.sn ? lap.sn : 'Tanpa SN';
                 const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}]`;
                 const isDisabled = lap.status !== 'Tersedia';
@@ -362,7 +378,7 @@
                         <input type="checkbox" name="selected_laptops" value="${infoText}" data-key="${lap._firebaseKey}" ${isDisabled ? 'disabled' : ''} class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
                         <div>
                             <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span>
-                            <span class="block text-xs text-slate-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek}</span>
+                            <span class="block text-xs text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek}</span>
                             ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
                         </div>
                     </label>
@@ -404,124 +420,4 @@
                         let badgeColor = "bg-amber-100 text-amber-800";
                         if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
                         if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
-                        if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
-                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
-                    } else if (key === 'unit' && currentTab === 'penyewaan') {
-                        rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
-                    } else if (key === 'sn' && currentTab === 'list_laptop') {
-                        rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
-                    } else {
-                        rowHtml += `<td class="px-4 py-3">${val}</td>`;
-                    }
-                });
-
-                rowHtml += `
-                    <td class="px-4 py-3">
-                        <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
-                            <i class="fa-solid fa-trash-can"></i>
-                        </button>
-                    </td>
-                `;
-                rowHtml += `</tr>`;
-                tbody.innerHTML += rowHtml;
-            });
-        }
-
-        function handleSubmit(e) {
-            e.preventDefault();
-            if (!window.dbFirebase) {
-                alert("Koneksi internet bermasalah atau database belum siap.");
-                return;
-            }
-
-            const formData = new FormData(e.target);
-            const currentData = globalDataCloud[currentTab] || [];
-            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
-            
-            const d = new Date();
-            const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-
-            const newDataItem = {
-                id: nextId,
-                tanggal: tanggalHariIni
-            };
-
-            let laptopKeysToUpdate = [];
-
-            if (currentTab === 'penyewaan') {
-                const checkedBoxes = e.target.querySelectorAll('input[name="selected_laptops"]:checked');
-                if (checkedBoxes.length === 0) {
-                    alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
-                    return;
-                }
-
-                let listUnitSewa = [];
-                checkedBoxes.forEach(cb => {
-                    listUnitSewa.push(`• ${cb.value}`);
-                    laptopKeysToUpdate.push(cb.getAttribute('data-key')); // Simpan key untuk update status
-                });
-
-                newDataItem.penyewa = formData.get('penyewa');
-                newDataItem.tgl_selesai = formData.get('tgl_selesai');
-                newDataItem.total_biaya = formData.get('total_biaya');
-                newDataItem.status = formData.get('status');
-                newDataItem.unit = listUnitSewa.join(', ');
-                newDataItem._linkedLaptopKeys = laptopKeysToUpdate; // Simpan relasi key untuk referensi saat hapus
-            } else {
-                for (let [key, value] of formData.entries()) {
-                    newDataItem[key] = value;
-                }
-            }
-
-            const targetRef = window.dbRef(window.dbFirebase, currentTab);
-            const newPostRef = window.dbPush(targetRef);
-            
-            window.dbSet(newPostRef, newDataItem)
-                .then(() => {
-                    // OTOMATISASI: Jika berhasil simpan sewa, update status laptop di master data menjadi 'Disewa'
-                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0) {
-                        laptopKeysToUpdate.forEach(laptopKey => {
-                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
-                            window.dbUpdate(laptopStatusRef, { status: "Disewa" });
-                        });
-                    }
-                    
-                    showToast();
-                    e.target.reset();
-                    if(currentTab === 'penyewaan') populateLaptopCheckboxes();
-                })
-                .catch((error) => {
-                    alert("Gagal menyimpan ke cloud: " + error.message);
-                });
-        }
-
-        function deleteRow(firebaseKey) {
-            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
-                // OTOMATISASI: Jika menghapus data PENYEWAAN, kembalikan status laptop terkait menjadi 'Tersedia'
-                if (currentTab === 'penyewaan') {
-                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
-                    if (sewaItem && sewaItem._linkedLaptopKeys) {
-                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
-                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
-                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
-                        });
-                    }
-                }
-
-                const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
-                window.dbRemove(targetRowRef)
-                    .catch((error) => {
-                        alert("Gagal menghapus data dari cloud: " + error.message);
-                    });
-            }
-        }
-
-        function showToast() {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-        }
-    </script>
-</body>
-</html>
+                        if (val === 'Dis
