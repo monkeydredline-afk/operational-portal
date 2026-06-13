@@ -12,18 +12,17 @@
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // =================================================================
-        // KONFIGURASI FIREBASE ALAMAT ASLI (DATA LAMA DIJAMIN MUNCUL)
+        // KONFIGURASI FIREBASE (SERVER AMERIKA - DATA ANDA PASTI MUNCUL)
         // =================================================================
         const firebaseConfig = {
-    apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
-    authDomain: "teknisi-portal.firebaseapp.com",
-    // Gunakan URL referensi standar yang disarankan oleh Firebase SDK untuk region Asia
-    databaseURL: "https://teknisi-portal-default-rtdb.firebaseio.com", 
-    projectId: "teknisi-portal",
-    storageBucket: "teknisi-portal.firebasestorage.app",
-    messagingSenderId: "535247512587",
-    appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
-};
+            apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
+            authDomain: "teknisi-portal.firebaseapp.com",
+            databaseURL: "https://teknisi-portal-default-rtdb.firebaseio.com", 
+            projectId: "teknisi-portal",
+            storageBucket: "teknisi-portal.firebasestorage.app",
+            messagingSenderId: "535247512587",
+            appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
+        };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
@@ -338,7 +337,6 @@
             head.innerHTML = html;
         }
 
-        // PERBAIKAN & PENAMBAHAN: Fungsi render checkbox sekarang mendukung filter ketik (Search Bar)
         function populateLaptopCheckboxes() {
             const container = document.getElementById('checkbox-laptop-container');
             if(!container) return;
@@ -349,11 +347,9 @@
                 return;
             }
 
-            // Ambil query pencarian form jika kolom input pencariannya ada
             const searchInput = document.getElementById('search-form-laptop');
             const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
 
-            // Filter data secara case-insensitive
             const filteredLaptop = masterLaptop.filter(lap => {
                 const brand = (lap.merk || '').toLowerCase();
                 const type = (lap.tipe || '').toLowerCase();
@@ -420,4 +416,122 @@
                         let badgeColor = "bg-amber-100 text-amber-800";
                         if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
                         if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
-                        if (val === 'Dis
+                        if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
+                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
+                    } else if (key === 'unit' && currentTab === 'penyewaan') {
+                        rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
+                    } else if (key === 'sn' && currentTab === 'list_laptop') {
+                        rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
+                    } else {
+                        rowHtml += `<td class="px-4 py-3">${val}</td>`;
+                    }
+                });
+
+                rowHtml += `
+                    <td class="px-4 py-3">
+                        <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>
+                `;
+                rowHtml += `</tr>`;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            if (!window.dbFirebase) {
+                alert("Koneksi internet bermasalah atau database belum siap.");
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const currentData = globalDataCloud[currentTab] || [];
+            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
+            
+            const d = new Date();
+            const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+            const newDataItem = {
+                id: nextId,
+                tanggal: tanggalHariIni
+            };
+
+            let laptopKeysToUpdate = [];
+
+            if (currentTab === 'penyewaan') {
+                const checkedBoxes = e.target.querySelectorAll('input[name="selected_laptops"]:checked');
+                if (checkedBoxes.length === 0) {
+                    alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
+                    return;
+                }
+
+                let listUnitSewa = [];
+                checkedBoxes.forEach(cb => {
+                    listUnitSewa.push(`• ${cb.value}`);
+                    laptopKeysToUpdate.push(cb.getAttribute('data-key'));
+                });
+
+                newDataItem.penyewa = formData.get('penyewa');
+                newDataItem.tgl_selesai = formData.get('tgl_selesai');
+                newDataItem.total_biaya = formData.get('total_biaya');
+                newDataItem.status = formData.get('status');
+                newDataItem.unit = listUnitSewa.join(', ');
+                newDataItem._linkedLaptopKeys = laptopKeysToUpdate;
+            } else {
+                for (let [key, value] of formData.entries()) {
+                    newDataItem[key] = value;
+                }
+            }
+
+            const targetRef = window.dbRef(window.dbFirebase, currentTab);
+            const newPostRef = window.dbPush(targetRef);
+            
+            window.dbSet(newPostRef, newDataItem)
+                .then(() => {
+                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0) {
+                        laptopKeysToUpdate.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Disewa" });
+                        });
+                    }
+                    
+                    showToast();
+                    e.target.reset();
+                    if(currentTab === 'penyewaan') populateLaptopCheckboxes();
+                })
+                .catch((error) => {
+                    alert("Gagal menyimpan ke cloud: " + error.message);
+                });
+        }
+
+        function deleteRow(firebaseKey) {
+            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
+                if (currentTab === 'penyewaan') {
+                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                    if (sewaItem && sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                }
+
+                const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
+                window.dbRemove(targetRowRef)
+                    .catch((error) => {
+                        alert("Gagal menghapus data dari cloud: " + error.message);
+                    });
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+    </script>
+</body>
+</html>
