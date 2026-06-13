@@ -9,7 +9,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         // =================================================================
         // KONFIGURASI FIREBASE ALAMAT ASLI (DATA LAMA DIJAMIN AMUNCUL)
@@ -36,6 +36,7 @@
         window.dbPush = push;
         window.dbOnValue = onValue;
         window.dbRemove = remove;
+        window.dbUpdate = update; // Tambahan fungsi update untuk mengubah status laptop
         
         // Jalankan inisialisasi aplikasi cloud setelah DOM siap
         document.addEventListener("DOMContentLoaded", () => {
@@ -185,9 +186,9 @@
                     <input type="date" name="tgl_selesai" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Unit & Jumlah Laptop yang Disewa</label>
-                    <div id="checkbox-laptop-container" class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white space-y-2">
-                        <!-- Diisi otomatis melalui JavaScript -->
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Unit Laptop yang Tersedia (Bisa Centang Banyak)</label>
+                    <div id="checkbox-laptop-container" class="border border-gray-300 rounded-xl p-3 max-h-52 overflow-y-auto bg-white space-y-2">
+                        <!-- List pilihan laptop ber-SN di-render otomatis via JS -->
                     </div>
                 </div>
                 <div>
@@ -238,13 +239,17 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
                     <input type="text" name="tipe" placeholder="Contoh: ThinkPad T480, ROG G15" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi Singkat</label>
-                    <input type="text" name="spek" placeholder="Contoh: Core i5 Gen 8 / RAM 8GB / SSD 256GB" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (SN) Unit</label>
+                    <input type="text" name="sn" placeholder="Masukkan nomor SN unik" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Harga Sewa per Hari (Rp)</label>
                     <input type="number" name="harga_sewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi Singkat</label>
+                    <input type="text" name="spek" placeholder="Contoh: Core i5 Gen 8 / RAM 8GB / SSD 256GB" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status Ketersediaan</label>
@@ -259,16 +264,16 @@
 
         const tableHeaders = {
             services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
-            penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & Qty', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
+            penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
-            list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
+            list_laptop: ['ID', 'Tanggal Input', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi', 'Harga/Hari', 'Status', 'Aksi']
         };
 
         const dataKeysMapping = {
             services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_selesai', 'total_biaya', 'status'],
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
-            list_laptop: ['id', 'tanggal', 'merk', 'tipe', 'spek', 'harga_sewa', 'status']
+            list_laptop: ['id', 'tanggal', 'merk', 'tipe', 'sn', 'spek', 'harga_sewa', 'status']
         };
 
         function initApp() {
@@ -335,6 +340,7 @@
             head.innerHTML = html;
         }
 
+        // FUNGSI: Render checkbox laptop berdasarkan item spesifik ber-SN unik
         function populateLaptopCheckboxes() {
             const container = document.getElementById('checkbox-laptop-container');
             if(!container) return;
@@ -346,36 +352,23 @@
             }
 
             let html = '';
-            masterLaptop.forEach((lap, index) => {
-                const infoText = `${lap.merk} ${lap.tipe} (${lap.spek})`;
+            masterLaptop.forEach((lap) => {
+                const snText = lap.sn ? lap.sn : 'Tanpa SN';
+                const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}]`;
                 const isDisabled = lap.status !== 'Tersedia';
                 
                 html += `
-                    <div class="flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg transition border-b last:border-b-0 border-gray-100">
-                        <label class="flex items-start space-x-2.5 text-sm ${isDisabled ? 'text-gray-400' : 'cursor-pointer flex-1'}">
-                            <input type="checkbox" name="selected_units" value="${infoText}" data-index="${index}" ${isDisabled ? 'disabled' : ''} onchange="toggleQuantityField(this, ${index})" class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300">
-                            <div>
-                                <span class="font-medium">${lap.merk} ${lap.tipe}</span>
-                                <span class="block text-xs text-gray-500">${lap.spek}</span>
-                                ${isDisabled ? `<span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-medium mt-0.5 inline-block">${lap.status}</span>` : ''}
-                            </div>
-                        </label>
-                        <div class="flex items-center space-x-1">
-                            <input type="number" id="qty-${index}" min="1" value="1" disabled class="w-14 p-1 text-center border border-gray-300 rounded text-sm focus:ring-1 focus:ring-cyan-500 focus:outline-none disabled:bg-gray-100 disabled:text-gray-400">
-                            <span class="text-xs text-gray-500">Unit</span>
+                    <label class="flex items-start space-x-3 p-1.5 hover:bg-slate-50 rounded-lg transition text-sm ${isDisabled ? 'text-gray-400 bg-gray-50' : 'cursor-pointer'}">
+                        <input type="checkbox" name="selected_laptops" value="${infoText}" data-key="${lap._firebaseKey}" ${isDisabled ? 'disabled' : ''} class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
+                        <div>
+                            <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span>
+                            <span class="block text-xs text-slate-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek}</span>
+                            ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
                         </div>
-                    </div>
+                    </label>
                 `;
             });
             container.innerHTML = html;
-        }
-
-        window.toggleQuantityField = function(checkbox, index) {
-            const qtyInput = document.getElementById(`qty-${index}`);
-            if (qtyInput) {
-                qtyInput.disabled = !checkbox.checked;
-                if (!checkbox.checked) qtyInput.value = "1";
-            }
         }
 
         function renderTable() {
@@ -415,6 +408,8 @@
                         rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
                     } else if (key === 'unit' && currentTab === 'penyewaan') {
                         rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
+                    } else if (key === 'sn' && currentTab === 'list_laptop') {
+                        rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
                     } else {
                         rowHtml += `<td class="px-4 py-3">${val}</td>`;
                     }
@@ -451,25 +446,27 @@
                 tanggal: tanggalHariIni
             };
 
+            let laptopKeysToUpdate = [];
+
             if (currentTab === 'penyewaan') {
-                const checkedBoxes = e.target.querySelectorAll('input[name="selected_units"]:checked');
+                const checkedBoxes = e.target.querySelectorAll('input[name="selected_laptops"]:checked');
                 if (checkedBoxes.length === 0) {
-                    alert("Silakan pilih minimal 1 unit laptop yang ingin disewa!");
+                    alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
                     return;
                 }
 
                 let listUnitSewa = [];
                 checkedBoxes.forEach(cb => {
-                    const idx = cb.getAttribute('data-index');
-                    const qtyValue = document.getElementById(`qty-${idx}`).value;
-                    listUnitSewa.push(`• ${cb.value} [${qtyValue} Unit]`);
+                    listUnitSewa.push(`• ${cb.value}`);
+                    laptopKeysToUpdate.push(cb.getAttribute('data-key')); // Simpan key untuk update status
                 });
 
                 newDataItem.penyewa = formData.get('penyewa');
                 newDataItem.tgl_selesai = formData.get('tgl_selesai');
                 newDataItem.total_biaya = formData.get('total_biaya');
                 newDataItem.status = formData.get('status');
-                newDataItem.unit = listUnitSewa.join(', '); 
+                newDataItem.unit = listUnitSewa.join(', ');
+                newDataItem._linkedLaptopKeys = laptopKeysToUpdate; // Simpan relasi key untuk referensi saat hapus
             } else {
                 for (let [key, value] of formData.entries()) {
                     newDataItem[key] = value;
@@ -481,6 +478,14 @@
             
             window.dbSet(newPostRef, newDataItem)
                 .then(() => {
+                    // OTOMATISASI: Jika berhasil simpan sewa, update status laptop di master data menjadi 'Disewa'
+                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0) {
+                        laptopKeysToUpdate.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Disewa" });
+                        });
+                    }
+                    
                     showToast();
                     e.target.reset();
                     if(currentTab === 'penyewaan') populateLaptopCheckboxes();
@@ -492,6 +497,17 @@
 
         function deleteRow(firebaseKey) {
             if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
+                // OTOMATISASI: Jika menghapus data PENYEWAAN, kembalikan status laptop terkait menjadi 'Tersedia'
+                if (currentTab === 'penyewaan') {
+                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                    if (sewaItem && sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                }
+
                 const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
                 window.dbRemove(targetRowRef)
                     .catch((error) => {
