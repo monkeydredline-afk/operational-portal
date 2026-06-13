@@ -71,10 +71,10 @@
             </div>
             
             <div class="p-4 border-t border-slate-800 space-y-2">
-                <button onclick="triggerResetAllDatabase()" class="w-full bg-rose-900/40 hover:bg-rose-700 text-rose-300 hover:text-white border border-rose-800/60 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
-                    <i class="fa-solid fa-triangle-exclamation"></i> Kosongkan Semua Data
+                <button onclick="clearCurrentListData()" class="w-full bg-rose-950 hover:bg-rose-800 text-rose-300 hover:text-white border border-rose-800/50 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-dumpster-fire"></i> <span id="clear-btn-text">Kosongkan List Ini</span>
                 </button>
-                <div class="text-[10px] text-slate-500 text-center">
+                <div class="text-[10px] text-slate-500 text-center tracking-wide">
                     V2.0 Cloud Operational System
                 </div>
             </div>
@@ -339,10 +339,23 @@
                 cctv: "Input Proyek CCTV Pemasangan",
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)"
             };
+
+            const btnClearLabels = {
+                services: "Kosongkan Data Services",
+                penyewaan: "Kosongkan Data Penyewaan",
+                cctv: "Kosongkan Data CCTV",
+                list_laptop: "Kosongkan Master Laptop"
+            };
             
             document.getElementById('page-title').innerText = titles[tabName];
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
+
+            // Update teks tombol hapus massal di sidebar agar dinamis mengikuti tab yang aktif
+            const txtClearBtn = document.getElementById('clear-btn-text');
+            if (txtClearBtn) {
+                txtClearBtn.innerText = btnClearLabels[tabName];
+            }
 
             const importBtn = document.getElementById('import-excel-container');
             if (importBtn) {
@@ -486,6 +499,45 @@
             reader.readAsBinaryString(file);
         }
 
+        // FUNGSI UTAMA BARU: Mengosongkan data secara dinamis HANYA untuk list portal/tab yang sedang aktif
+        window.clearCurrentListData = function() {
+            const listNames = {
+                services: "Log Services",
+                penyewaan: "Data Penyewaan",
+                cctv: "Proyek CCTV",
+                list_laptop: "Master Data List Laptop"
+            };
+
+            const targetName = listNames[currentTab];
+            const currentDataLength = (globalDataCloud[currentTab] || []).length;
+
+            if (currentDataLength === 0) {
+                alert(`List [ ${targetName} ] saat ini sudah kosong.`);
+                return;
+            }
+
+            if (confirm(`🚨 PERINGATAN AKSES:\nAnda akan menghapus total seluruh data terinput (${currentDataLength} baris) khusus pada list [ ${targetName} ] secara permanen dari server Cloud.\n\nApakah Anda ingin memproses tindakan ini?`)) {
+                
+                // Input pengaman teks wajib diketik sesuai kode tab internal cloud agar tidak salah sasaran
+                const inputConfirm = prompt(`Untuk mengosongkan list ini, ketik kalimat konfirmasi tepat seperti di bawah ini (Gunakan HURUF BESAR):\n${currentTab.toUpperCase()}`);
+
+                if (inputConfirm === currentTab.toUpperCase()) {
+                    if (!window.dbFirebase) return;
+
+                    const currentListRef = window.dbRef(window.dbFirebase, currentTab);
+                    window.dbRemove(currentListRef)
+                        .then(() => {
+                            alert(`💥 Sukses! Seluruh data pada list [ ${targetName} ] berhasil dikosongkan.`);
+                        })
+                        .catch((err) => {
+                            alert(`Gagal menghapus data dari server: ${err.message}`);
+                        });
+                } else {
+                    alert("Tindakan dibatalkan. Kata kunci verifikasi yang Anda masukkan salah.");
+                }
+            }
+        }
+
         function renderTable() {
             const tbody = document.getElementById('table-body');
             if(!tbody) return;
@@ -524,4 +576,338 @@
                     } else if (key === 'unit' && currentTab === 'penyewaan') {
                         rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
                     } else if (key === 'sn' && currentTab === 'list_laptop') {
-                        rowHtml += `<td class="px-4 py-3 font-mono font
+                        rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
+                    } else if (key === 'kode_toko' && currentTab === 'list_laptop') {
+                        rowHtml += `<td class="px-4 py-3 font-mono font-bold text-slate-700 whitespace-nowrap">${val}</td>`;
+                    } else {
+                        rowHtml += `<td class="px-4 py-3">${val}</td>`;
+                    }
+                });
+
+                rowHtml += `<td class="px-4 py-3 flex items-center space-x-2">`;
+                if (currentTab === 'penyewaan' && item.status !== 'Lunas' && item.status !== 'Selesai') {
+                    rowHtml += `
+                        <button onclick="markAsSelesai('${item._firebaseKey}')" class="text-emerald-500 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition" title="Selesai / Kembalikan Unit">
+                            <i class="fa-solid fa-circle-check text-base"></i>
+                        </button>
+                    `;
+                }
+                
+                rowHtml += `
+                    <button onclick="openEditModal('${item._firebaseKey}')" class="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-50 transition" title="Edit Data">
+                        <i class="fa-solid fa-pen-to-square text-base"></i>
+                    </button>
+                    <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </td>`;
+                rowHtml += `</tr>`;
+                tbody.innerHTML += rowHtml;
+            });
+        }
+
+        window.openEditModal = function(firebaseKey) {
+            const currentDataList = globalDataCloud[currentTab] || [];
+            const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
+            
+            if(!targetItem) return;
+
+            document.getElementById('edit-firebase-key').value = firebaseKey;
+            const fieldsContainer = document.getElementById('edit-modal-fields');
+            fieldsContainer.innerHTML = '';
+
+            if (currentTab === 'services') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pelanggan</label>
+                        <input type="text" id="edit-pelanggan" value="${targetItem.pelanggan || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Perangkat</label>
+                        <input type="text" id="edit-perangkat" value="${targetItem.perangkat || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Gejala / Kerusakan</label>
+                        <textarea id="edit-kerusakan" rows="2" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.kerusakan || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Estimasi Biaya (Rp)</label>
+                        <input type="number" id="edit-biaya" value="${targetItem.biaya || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Antrean" ${targetItem.status === 'Antrean' ? 'selected' : ''}>Antrean</option>
+                            <option value="Proses" ${targetItem.status === 'Proses' ? 'selected' : ''}>Proses Pengecekan</option>
+                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
+                        </select>
+                    </div>
+                `;
+            } else if (currentTab === 'cctv') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Klien / Instansi</label>
+                        <input type="text" id="edit-klien" value="${targetItem.klien || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Lokasi Pemasangan</label>
+                        <input type="text" id="edit-lokasi" value="${targetItem.lokasi || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah Kamera CCTV</label>
+                        <input type="number" id="edit-jumlah_cctv" value="${targetItem.jumlah_cctv || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Progres Kerja</label>
+                        <input type="text" id="edit-progres" value="${targetItem.progres || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Proyek</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Survei" ${targetItem.status === 'Survei' ? 'selected' : ''}>Tahap Survei</option>
+                            <option value="Pengerjaan" ${targetItem.status === 'Pengerjaan' ? 'selected' : ''}>Sedang Dikerjakan</option>
+                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai / Serah Terima</option>
+                        </select>
+                    </div>
+                `;
+            } else if (currentTab === 'list_laptop') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label>
+                        <input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label>
+                        <input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label>
+                        <input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label>
+                        <input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label>
+                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option>
+                            <option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option>
+                            <option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Singkat</label>
+                        <input type="text" id="edit-spek" value="${targetItem.spek || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                `;
+            } else if (currentTab === 'penyewaan') {
+                fieldsContainer.innerHTML = `
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Penyewa</label>
+                        <input type="text" id="edit-penyewa" value="${targetItem.penyewa || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Selesai Sewa</label>
+                        <input type="date" id="edit-tgl_selesai" value="${targetItem.tgl_selesai || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Total Biaya Sewa (Rp)</label>
+                        <input type="number" id="edit-total_biaya" value="${targetItem.total_biaya || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label>
+                        <select id="edit-status" class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option>
+                            <option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option>
+                            <option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-50 border p-3 rounded-lg text-[11px] text-slate-500">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-0.5"></i> Info: Daftar Laptop ber-SN yang disewa tidak dapat diganti dari menu ini demi menjaga keakuratan stok fisik real-time gudang Anda.
+                    </div>
+                `;
+            }
+
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        window.closeEditModal = function() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        window.handleUpdateSubmit = function(e) {
+            e.preventDefault();
+            const firebaseKey = document.getElementById('edit-firebase-key').value;
+            if(!firebaseKey || !window.dbFirebase) return;
+
+            let updatedData = {};
+
+            if (currentTab === 'services') {
+                updatedData.pelanggan = document.getElementById('edit-pelanggan').value;
+                updatedData.perangkat = document.getElementById('edit-perangkat').value;
+                updatedData.kerusakan = document.getElementById('edit-kerusakan').value;
+                updatedData.biaya = document.getElementById('edit-biaya').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'cctv') {
+                updatedData.klien = document.getElementById('edit-klien').value;
+                updatedData.lokasi = document.getElementById('edit-lokasi').value;
+                updatedData.jumlah_cctv = document.getElementById('edit-jumlah_cctv').value;
+                updatedData.progres = document.getElementById('edit-progres').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'list_laptop') {
+                updatedData.kode_toko = document.getElementById('edit-kode_toko').value;
+                updatedData.merk = document.getElementById('edit-merk').value;
+                updatedData.tipe = document.getElementById('edit-tipe').value;
+                updatedData.sn = document.getElementById('edit-sn').value;
+                updatedData.spek = document.getElementById('edit-spek').value;
+                updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'penyewaan') {
+                const newStatus = document.getElementById('edit-status').value;
+                updatedData.penyewa = document.getElementById('edit-penyewa').value;
+                updatedData.tgl_selesai = document.getElementById('edit-tgl_selesai').value;
+                updatedData.total_biaya = document.getElementById('edit-total_biaya').value;
+                updatedData.status = newStatus;
+
+                if (newStatus === 'Lunas') {
+                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                    if (sewaItem && sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                }
+            }
+
+            const targetItemRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
+            window.dbUpdate(targetItemRef, updatedData)
+                .then(() => {
+                    closeEditModal();
+                    showToast();
+                })
+                .catch((error) => {
+                    alert("Gagal memperbarui data: " + error.message);
+                });
+        }
+
+        window.markAsSelesai = function(firebaseKey) {
+            if(confirm("Apakah unit laptop sudah dikembalikan dengan aman dan pembayaran lunas?")) {
+                const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                
+                if (sewaItem) {
+                    if (sewaItem._linkedLaptopKeys) {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                    
+                    const sewaStatusRef = window.dbRef(window.dbFirebase, `penyewaan/${firebaseKey}`);
+                    window.dbUpdate(sewaStatusRef, { status: "Lunas" })
+                        .then(() => {
+                            showToast();
+                        })
+                        .catch((error) => {
+                            alert("Gagal memperbarui status sewa: " + error.message);
+                        });
+                }
+            }
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            if (!window.dbFirebase) {
+                alert("Koneksi internet bermasalah atau database belum siap.");
+                return;
+            }
+
+            const formData = new FormData(e.target);
+            const currentData = globalDataCloud[currentTab] || [];
+            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
+            
+            const d = new Date();
+            const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+            const newDataItem = {
+                id: nextId,
+                tanggal: tanggalHariIni
+            };
+
+            let laptopKeysToUpdate = [];
+
+            if (currentTab === 'penyewaan') {
+                const checkedBoxes = e.target.querySelectorAll('input[name="selected_laptops"]:checked');
+                if (checkedBoxes.length === 0) {
+                    alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
+                    return;
+                }
+
+                let listUnitSewa = [];
+                checkedBoxes.forEach(cb => {
+                    listUnitSewa.push(`• ${cb.value}`);
+                    laptopKeysToUpdate.push(cb.getAttribute('data-key'));
+                });
+
+                newDataItem.penyewa = formData.get('penyewa');
+                newDataItem.tgl_selesai = formData.get('tgl_selesai');
+                newDataItem.total_biaya = formData.get('total_biaya');
+                newDataItem.status = formData.get('status');
+                newDataItem.unit = listUnitSewa.join(', ');
+                newDataItem._linkedLaptopKeys = laptopKeysToUpdate;
+            } else {
+                for (let [key, value] of formData.entries()) {
+                    newDataItem[key] = value;
+                }
+            }
+
+            const targetRef = window.dbRef(window.dbFirebase, currentTab);
+            const newPostRef = window.dbPush(targetRef);
+            
+            window.dbSet(newPostRef, newDataItem)
+                .then(() => {
+                    if (currentTab === 'penyewaan' && laptopKeysToUpdate.length > 0 && newDataItem.status !== 'Lunas') {
+                        laptopKeysToUpdate.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Disewa" });
+                        });
+                    }
+                    
+                    showToast();
+                    e.target.reset();
+                    if(currentTab === 'penyewaan') populateLaptopCheckboxes();
+                })
+                .catch((error) => {
+                    alert("Gagal menyimpan ke cloud: " + error.message);
+                });
+        }
+
+        function deleteRow(firebaseKey) {
+            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
+                if (currentTab === 'penyewaan') {
+                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                    if (sewaItem && sewaItem._linkedLaptopKeys && sewaItem.status !== 'Lunas') {
+                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        });
+                    }
+                }
+
+                const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
+                window.dbRemove(targetRowRef)
+                    .catch((error) => {
+                        alert("Gagal menghapus data dari cloud: " + error.message);
+                    });
+            }
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            if(!toast) return;
+            toast.classList.remove('hidden');
+            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        }
+    </script>
+</body>
+</html>
