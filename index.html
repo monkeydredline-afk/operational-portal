@@ -194,9 +194,16 @@
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
                             <i class="fa-solid fa-list-check text-cyan-600"></i> Data Terinput (Cloud)
                         </h3>
-                        <div class="relative w-full sm:w-64">
-                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400 text-sm"></i>
-                            <input type="text" id="search-bar" oninput="renderTable()" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <div class="flex items-center gap-2 w-full sm:w-auto flex-1 sm:flex-none justify-end">
+                            <div class="relative w-full sm:w-48">
+                                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                                <input type="text" id="search-bar" oninput="renderTable()" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                            </div>
+                            <div class="w-full sm:w-40">
+                                <select id="status-filter" onchange="renderTable()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium text-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                                    <option value="">Semua Status</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 
@@ -297,7 +304,6 @@
                     </select>
                 </div>
             `,
-            // MODIFIKASI: Menambahkan input Tgl Mulai Sewa
             penyewaan: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penyewa</label>
@@ -407,7 +413,6 @@
             `
         };
 
-        // MODIFIKASI: Menambahkan 'Tgl Mulai' pada penyewaan headers
         const tableHeaders = {
             services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
             penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Mulai', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
@@ -415,12 +420,19 @@
             list_laptop: ['ID', 'Tanggal Input', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Aksi']
         };
 
-        // MODIFIKASI: Menambahkan 'tgl_mulai' pada mapping data penyewaan
         const dataKeysMapping = {
             services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_mulai', 'tgl_selesai', 'total_biaya', 'status'],
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
             list_laptop: ['id', 'tanggal', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status']
+        };
+
+        // MODIFIKASI: Template pilihan status filter untuk masing-masing tab
+        const filterOptionsTemplate = {
+            services: ['Antrean', 'Proses', 'Selesai'],
+            penyewaan: ['Belum Bayar', 'DP 50%', 'Lunas'],
+            cctv: ['Survei', 'Pengerjaan', 'Selesai'],
+            list_laptop: ['Tersedia', 'Disewa', 'Maintenance']
         };
 
         function initApp() {
@@ -465,6 +477,16 @@
             document.getElementById('page-title').innerText = titles[tabName];
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
+
+            // MODIFIKASI: Render ulang opsi pilihan filter status sesuai tab aktif
+            const filterDropdown = document.getElementById('status-filter');
+            if (filterDropdown) {
+                filterDropdown.innerHTML = '<option value="">Semua Status</option>';
+                const options = filterOptionsTemplate[tabName] || [];
+                options.forEach(opt => {
+                    filterDropdown.innerHTML += `<option value="${opt}">${opt}</option>`;
+                });
+            }
 
             const txtClearBtn = document.getElementById('clear-btn-text');
             if (txtClearBtn) {
@@ -664,15 +686,23 @@
             }
         }
 
+        // MODIFIKASI: Menambahkan logika kombinasi filter status dan kata kunci pencarian
         function renderTable() {
             const tbody = document.getElementById('table-body');
             if(!tbody) return;
 
             const data = globalDataCloud[currentTab] || [];
             const searchQuery = document.getElementById('search-bar').value.toLowerCase();
+            const filterStatusValue = document.getElementById('status-filter').value;
             tbody.innerHTML = '';
 
             const filteredData = data.filter(item => {
+                // 1. Filter Status Check
+                if (filterStatusValue && item.status !== filterStatusValue) {
+                    return false;
+                }
+
+                // 2. Search Query Check
                 return Object.values(item).some(val => {
                     if (typeof val === 'object') return false;
                     return String(val).toLowerCase().includes(searchQuery);
@@ -680,7 +710,7 @@
             });
 
             if(filteredData.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="${tableHeaders[currentTab].length}" class="px-4 py-8 text-center text-gray-400 bg-gray-50 font-medium"><i class="fa-solid fa-folder-open text-xl block mb-2"></i>Belum ada data tersedia di cloud</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${tableHeaders[currentTab].length}" class="px-4 py-8 text-center text-gray-400 bg-gray-50 font-medium"><i class="fa-solid fa-folder-open text-xl block mb-2"></i>Tidak ada data yang sesuai filter</td></tr>`;
                 return;
             }
 
@@ -744,7 +774,6 @@
             });
         }
 
-        // MODIFIKASI: Menambahkan input edit-tgl_mulai di modal edit penyewaan
         window.openEditModal = function(firebaseKey) {
             const currentDataList = globalDataCloud[currentTab] || [];
             const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
@@ -801,7 +830,6 @@
             document.getElementById('edit-modal').classList.add('hidden');
         }
 
-        // MODIFIKASI: Menambahkan pengambilan data edit-tgl_mulai saat update penyewaan
         window.handleUpdateSubmit = function(e) {
             e.preventDefault();
             const firebaseKey = document.getElementById('edit-firebase-key').value;
@@ -872,7 +900,6 @@
             }
         }
 
-        // MODIFIKASI: Menambahkan penyimpanan formData 'tgl_mulai' ke Firebase
         function handleSubmit(e) {
             e.preventDefault();
             if (!window.dbFirebase) return;
