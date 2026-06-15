@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         /* Desain scrollbar minimalis khusus untuk kolom tabel yang padat data */
@@ -158,8 +159,16 @@
         <div class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
-                <div class="text-sm bg-slate-100 px-3 py-1.5 rounded-full text-slate-600 font-medium">
-                    <i class="fa-regular fa-calendar mr-1"></i> <span id="current-date"></span>
+                
+                <div class="flex items-center gap-2">
+                    <button onclick="openDashboardModal()" class="text-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-3.5 py-1.5 rounded-full font-semibold shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span class="hidden sm:inline">Dashboard Statistik</span>
+                    </button>
+
+                    <div class="text-sm bg-slate-100 px-3 py-1.5 rounded-full text-slate-600 font-medium whitespace-nowrap">
+                        <i class="fa-regular fa-calendar mr-1"></i> <span id="current-date"></span>
+                    </div>
                 </div>
             </header>
 
@@ -227,6 +236,90 @@
         </div>
     </div>
 
+    <div id="dashboard-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <header class="bg-slate-900 text-white p-4 flex justify-between items-center px-6">
+                <h3 class="font-bold text-lg flex items-center gap-2 tracking-wide">
+                    <i class="fa-solid fa-chart-pie text-cyan-400"></i> Ringkasan Eksekutif & Statistik Operasional Portal
+                </h3>
+                <button onclick="closeDashboardModal()" class="text-slate-400 hover:text-white transition p-1 rounded-lg hover:bg-slate-800">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </header>
+            
+            <div class="p-6 bg-slate-50 overflow-y-auto max-h-[85vh] space-y-6">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Antrean Servis</span>
+                            <span id="stat-services-pending" class="text-2xl font-black text-amber-600 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-amber-50 text-amber-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-laptop-medical"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Omset Unit Penyewaan</span>
+                            <span id="stat-rent-omset" class="text-xl font-black text-emerald-600 mt-1 block">Rp 0</span>
+                        </div>
+                        <div class="bg-emerald-50 text-emerald-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-sack-dollar"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Proyek CCTV Aktif</span>
+                            <span id="stat-cctv-active" class="text-2xl font-black text-blue-600 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-blue-50 text-blue-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-video"></i></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Unit Laptop Aset</span>
+                            <span id="stat-laptop-total" class="text-2xl font-black text-slate-700 mt-1 block">0</span>
+                        </div>
+                        <div class="bg-slate-100 text-slate-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-laptop"></i></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-business-time text-cyan-600 mr-1"></i> Progres Servis & CCTV</h4>
+                        <div class="relative flex-1" style="min-height: 250px;">
+                            <canvas id="chartWorkload"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-cyan-600 mr-1"></i> Status Ketersediaan Unit</h4>
+                        <div class="relative flex-1" style="min-height: 250px;">
+                            <canvas id="chartLaptopStock"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-list-ol text-cyan-600 mr-1"></i> Detail Distribusi Model Aset</h4>
+                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[250px] pr-1">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50 text-slate-600 sticky top-0 font-bold border-b">
+                                    <tr>
+                                        <th class="px-2 py-1.5">Nama Model / Unit</th>
+                                        <th class="px-2 py-1.5 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-laptop-models-tbody" class="divide-y text-slate-700">
+                                    <tr><td colspan="2" class="px-2 py-4 text-center text-gray-400 italic">Memproses data gudang...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="text-[11px] text-slate-400 text-center italic mt-2">
+                    <i class="fa-solid fa-sync animate-spin mr-1 text-cyan-500"></i> Seluruh metrik kalkulasi dan visualisasi grafik di atas terintegrasi otomatis secara penuh dengan cloud database Firebase Anda.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -259,6 +352,9 @@
             cctv: [],
             list_laptop: []
         }; 
+        
+        let chartWorkloadInstance = null;
+        let chartLaptopStockInstance = null;
 
         function handleLoginSubmit(e) {
             e.preventDefault();
@@ -427,7 +523,6 @@
             list_laptop: ['id', 'tanggal', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status']
         };
 
-        // MODIFIKASI: Template pilihan status filter untuk masing-masing tab
         const filterOptionsTemplate = {
             services: ['Antrean', 'Proses', 'Selesai'],
             penyewaan: ['Belum Bayar', 'DP 50%', 'Lunas'],
@@ -435,7 +530,143 @@
             list_laptop: ['Tersedia', 'Disewa', 'Maintenance']
         };
 
+        window.openDashboardModal = function() {
+            document.getElementById('dashboard-modal').classList.remove('hidden');
+            calculateAndRenderStats();
+        }
+
+        window.closeDashboardModal = function() {
+            document.getElementById('dashboard-modal').classList.add('hidden');
+        }
+
+        // FUNGSI UTAMA: KALKULASI DINAMIS BERDASARKAN INPUT CLOUD DAN GAMBAR TABEL KELOMPOK MEREK
+        function calculateAndRenderStats() {
+            const dataServices = globalDataCloud['services'] || [];
+            const dataPenyewaan = globalDataCloud['penyewaan'] || [];
+            const dataCctv = globalDataCloud['cctv'] || [];
+            const dataLaptop = globalDataCloud['list_laptop'] || [];
+
+            // 1. Hitung Angka Ringkasan Atas
+            let pendingServices = dataServices.filter(s => s.status === 'Antrean' || s.status === 'Proses').length;
+            
+            let totalOmsetSewa = 0;
+            dataPenyewaan.forEach(p => { totalOmsetSewa += (Number(p.total_biaya) || 0); });
+            
+            let activeCctv = dataCctv.filter(c => c.status === 'Survei' || c.status === 'Pengerjaan').length;
+            let totalLaptopAset = dataLaptop.length;
+
+            document.getElementById('stat-services-pending').innerText = pendingServices;
+            document.getElementById('stat-rent-omset').innerText = 'Rp ' + totalOmsetSewa.toLocaleString('id-ID');
+            document.getElementById('stat-cctv-active').innerText = activeCctv;
+            document.getElementById('stat-laptop-total').innerText = totalLaptopAset;
+
+            // 2. MODIFIKASI FITUR BARU: Pemetaan Distribusi Model Laptop Secara Otomatis
+            let modelCounts = {};
+            dataLaptop.forEach(lap => {
+                let merkText = (lap.merk || '').trim();
+                let tipeText = (lap.tipe || '').trim();
+                // Gabungkan nama Brand + Tipe secara rapi (contoh: Lenovo ThinkPad L480)
+                let fullModelName = `${merkText} ${tipeText}`.trim();
+                
+                if(!fullModelName || fullModelName === "- -") fullModelName = "Model Tidak Diketahui";
+                
+                modelCounts[fullModelName] = (modelCounts[fullModelName] || 0) + 1;
+            });
+
+            // Urutkan daftar alfabetis nama unit laptop agar rapi di panel dashboard
+            let sortedModels = Object.keys(modelCounts).sort();
+            
+            const modelsTbody = document.getElementById('dashboard-laptop-models-tbody');
+            modelsTbody.innerHTML = '';
+            
+            if(sortedModels.length === 0) {
+                modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit laptop di master data</td></tr>`;
+            } else {
+                sortedModels.forEach(modelName => {
+                    let totalUnitPerModel = modelCounts[modelName];
+                    modelsTbody.innerHTML += `
+                        <tr class="hover:bg-slate-100 transition">
+                            <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
+                            <td class="px-2 py-1.5 text-right font-bold text-slate-900">${totalUnitPerModel}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            // 3. Render Grafik A: Progres Log Servis vs CCTV Pemasangan
+            let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
+            let sProses = dataServices.filter(s => s.status === 'Proses').length;
+            let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
+
+            let cSurvei = dataCctv.filter(c => c.status === 'Survei').length;
+            let cKerja = dataCctv.filter(c => c.status === 'Pengerjaan').length;
+            let cSelesai = dataCctv.filter(c => c.status === 'Selesai' || c.status === 'Selesai / Serah Terima').length;
+
+            const ctxWorkload = document.getElementById('chartWorkload').getContext('2d');
+            if (chartWorkloadInstance !== null) chartWorkloadInstance.destroy();
+            
+            chartWorkloadInstance = new Chart(ctxWorkload, {
+                type: 'bar',
+                data: {
+                    labels: ['Tahap Awal', 'Berjalan', 'Selesai'],
+                    datasets: [
+                        {
+                            label: 'Services',
+                            data: [sAntrean, sProses, sSelesai],
+                            backgroundColor: 'rgba(236, 72, 153, 0.85)',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'CCTV',
+                            data: [cSurvei, cKerja, cSelesai],
+                            backgroundColor: 'rgba(59, 130, 246, 0.85)',
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748b' } }
+                    }
+                }
+            });
+
+            // 4. Render Grafik B: Status Ketersediaan Aset Laptop Gudang
+            let lapReady = dataLaptop.filter(l => l.status === 'Tersedia').length;
+            let lapSewa = dataLaptop.filter(l => l.status === 'Disewa').length;
+            let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
+
+            const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
+            if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
+
+            chartLaptopStockInstance = new Chart(ctxLaptop, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tersedia ('+lapReady+')', 'Disewa ('+lapSewa+')', 'Maintenance ('+lapRusak+')'],
+                    datasets: [{
+                        data: [lapReady, lapSewa, lapRusak],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
         function initApp() {
+            const d = new Date();
+            const opsiHari = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').innerText = d.toLocaleDateString('id-ID', opsiHari);
+
             switchTab('services');
 
             const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop'];
@@ -451,6 +682,9 @@
                     }
                     if (node === 'list_laptop' && currentTab === 'penyewaan') {
                         populateLaptopCheckboxes();
+                    }
+                    if (!document.getElementById('dashboard-modal').classList.contains('hidden')) {
+                        calculateAndRenderStats();
                     }
                 });
             });
@@ -478,7 +712,6 @@
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
 
-            // MODIFIKASI: Render ulang opsi pilihan filter status sesuai tab aktif
             const filterDropdown = document.getElementById('status-filter');
             if (filterDropdown) {
                 filterDropdown.innerHTML = '<option value="">Semua Status</option>';
@@ -686,7 +919,6 @@
             }
         }
 
-        // MODIFIKASI: Menambahkan logika kombinasi filter status dan kata kunci pencarian
         function renderTable() {
             const tbody = document.getElementById('table-body');
             if(!tbody) return;
@@ -697,12 +929,9 @@
             tbody.innerHTML = '';
 
             const filteredData = data.filter(item => {
-                // 1. Filter Status Check
                 if (filterStatusValue && item.status !== filterStatusValue) {
                     return false;
                 }
-
-                // 2. Search Query Check
                 return Object.values(item).some(val => {
                     if (typeof val === 'object') return false;
                     return String(val).toLowerCase().includes(searchQuery);
