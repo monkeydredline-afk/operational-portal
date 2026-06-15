@@ -8,6 +8,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
+    <style>
+        /* Desain scrollbar minimalis khusus untuk kolom Unit & SN Laptop */
+        .custom-table-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-table-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -399,7 +417,6 @@
             head.innerHTML = html;
         }
 
-        // FUNGSI UPDATE: Mempertahankan status checked berdasarkan array state 'selectedLaptopKeys'
         function populateLaptopCheckboxes() {
             const container = document.getElementById('checkbox-laptop-container');
             if(!container) return;
@@ -434,7 +451,6 @@
                 const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}] [Kode: ${kdTokoText}]`;
                 const isDisabled = lap.status !== 'Tersedia';
                 
-                // Periksa apakah key data cloud ini ada di dalam memori checklist pilihan kita
                 const isChecked = selectedLaptopKeys.includes(lap._firebaseKey) ? 'checked' : '';
                 
                 html += `
@@ -459,7 +475,6 @@
             container.innerHTML = html;
         }
 
-        // FUNGSI BARU: Sinkronisasi aksi user dengan variabel penampung memori real-time
         window.syncCheckboxState = function(cb) {
             const laptopKey = cb.getAttribute('data-key');
             if (cb.checked) {
@@ -561,6 +576,7 @@
             }
         }
 
+        // FUNGSI UPDATE: Ditambahkan pembungkus div dengan scrollbar otomatis dan batas tinggi maksimal 96px
         function renderTable() {
             const tbody = document.getElementById('table-body');
             if(!tbody) return;
@@ -597,7 +613,13 @@
                         if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
                         rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
                     } else if (key === 'unit' && currentTab === 'penyewaan') {
-                        rowHtml += `<td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">${val.replace(/, /g, '<br>')}</td>`;
+                        // MODIFIKASI: Membatasi tinggi kolom unit maksimal 96px (max-h-24) dengan scroll otomatis dan scrollbar tipis
+                        rowHtml += `
+                            <td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">
+                                <div class="max-h-24 overflow-y-auto pr-2 space-y-1 custom-table-scrollbar">
+                                    ${val.replace(/, /g, '<br>')}
+                                </div>
+                            </td>`;
                     } else if (key === 'sn' && currentTab === 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
                     } else if (key === 'kode_toko' && currentTab === 'list_laptop') {
@@ -860,7 +882,6 @@
             let laptopKeysToUpdate = [];
 
             if (currentTab === 'penyewaan') {
-                // Seleksi checked boxes dari array penampung global, bukan DOM yang rentan hilang akibat filter
                 if (selectedLaptopKeys.length === 0) {
                     alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
                     return;
