@@ -170,6 +170,7 @@
 
     <script>
         let currentTab = 'services';
+        let selectedLaptopKeys = []; // Array penampung status centang agar tidak hilang saat filter pencarian
         let globalDataCloud = {
             services: [],
             penyewaan: [],
@@ -333,6 +334,8 @@
 
         function switchTab(tabName) {
             currentTab = tabName;
+            selectedLaptopKeys = []; // Reset seluruh status centang ketika berpindah halaman/tab menu
+            
             const titles = { 
                 services: "Input Log Services", 
                 penyewaan: "Input Data Penyewaan", 
@@ -351,7 +354,6 @@
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
 
-            // Update teks tombol hapus massal di sidebar agar dinamis mengikuti tab yang aktif
             const txtClearBtn = document.getElementById('clear-btn-text');
             if (txtClearBtn) {
                 txtClearBtn.innerText = btnClearLabels[tabName];
@@ -397,6 +399,7 @@
             head.innerHTML = html;
         }
 
+        // FUNGSI UPDATE: Mempertahankan status checked berdasarkan array state 'selectedLaptopKeys'
         function populateLaptopCheckboxes() {
             const container = document.getElementById('checkbox-laptop-container');
             if(!container) return;
@@ -431,9 +434,19 @@
                 const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}] [Kode: ${kdTokoText}]`;
                 const isDisabled = lap.status !== 'Tersedia';
                 
+                // Periksa apakah key data cloud ini ada di dalam memori checklist pilihan kita
+                const isChecked = selectedLaptopKeys.includes(lap._firebaseKey) ? 'checked' : '';
+                
                 html += `
                     <label class="flex items-start space-x-3 p-1.5 hover:bg-slate-50 rounded-lg transition text-sm ${isDisabled ? 'text-gray-400 bg-gray-50' : 'cursor-pointer'}">
-                        <input type="checkbox" name="selected_laptops" value="${infoText}" data-key="${lap._firebaseKey}" ${isDisabled ? 'disabled' : ''} class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
+                        <input type="checkbox" 
+                               name="selected_laptops" 
+                               value="${infoText}" 
+                               data-key="${lap._firebaseKey}" 
+                               ${isDisabled ? 'disabled' : ''} 
+                               ${isChecked}
+                               onchange="syncCheckboxState(this)"
+                               class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
                         <div>
                             <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
                             <span class="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold ml-1">${kdTokoText}</span>
@@ -444,6 +457,18 @@
                 `;
             });
             container.innerHTML = html;
+        }
+
+        // FUNGSI BARU: Sinkronisasi aksi user dengan variabel penampung memori real-time
+        window.syncCheckboxState = function(cb) {
+            const laptopKey = cb.getAttribute('data-key');
+            if (cb.checked) {
+                if (!selectedLaptopKeys.includes(laptopKey)) {
+                    selectedLaptopKeys.push(laptopKey);
+                }
+            } else {
+                selectedLaptopKeys = selectedLaptopKeys.filter(key => key !== laptopKey);
+            }
         }
 
         window.importSpreadsheet = function(e) {
@@ -499,7 +524,6 @@
             reader.readAsBinaryString(file);
         }
 
-        // FUNGSI UTAMA BARU: Mengosongkan data secara dinamis HANYA untuk list portal/tab yang sedang aktif
         window.clearCurrentListData = function() {
             const listNames = {
                 services: "Log Services",
@@ -518,7 +542,6 @@
 
             if (confirm(`🚨 PERINGATAN AKSES:\nAnda akan menghapus total seluruh data terinput (${currentDataLength} baris) khusus pada list [ ${targetName} ] secara permanen dari server Cloud.\n\nApakah Anda ingin memproses tindakan ini?`)) {
                 
-                // Input pengaman teks wajib diketik sesuai kode tab internal cloud agar tidak salah sasaran
                 const inputConfirm = prompt(`Untuk mengosongkan list ini, ketik kalimat konfirmasi tepat seperti di bawah ini (Gunakan HURUF BESAR):\n${currentTab.toUpperCase()}`);
 
                 if (inputConfirm === currentTab.toUpperCase()) {
@@ -837,16 +860,23 @@
             let laptopKeysToUpdate = [];
 
             if (currentTab === 'penyewaan') {
-                const checkedBoxes = e.target.querySelectorAll('input[name="selected_laptops"]:checked');
-                if (checkedBoxes.length === 0) {
+                // Seleksi checked boxes dari array penampung global, bukan DOM yang rentan hilang akibat filter
+                if (selectedLaptopKeys.length === 0) {
                     alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
                     return;
                 }
 
                 let listUnitSewa = [];
-                checkedBoxes.forEach(cb => {
-                    listUnitSewa.push(`• ${cb.value}`);
-                    laptopKeysToUpdate.push(cb.getAttribute('data-key'));
+                const masterLaptop = globalDataCloud['list_laptop'] || [];
+                
+                selectedLaptopKeys.forEach(key => {
+                    const targetLap = masterLaptop.find(l => l._firebaseKey === key);
+                    if (targetLap) {
+                        const snText = targetLap.sn ? targetLap.sn : 'Tanpa SN';
+                        const kdTokoText = targetLap.kode_toko ? targetLap.kode_toko : '-';
+                        listUnitSewa.push(`• ${targetLap.merk} ${targetLap.tipe} [SN: ${snText}] [Kode: ${kdTokoText}]`);
+                        laptopKeysToUpdate.push(key);
+                    }
                 });
 
                 newDataItem.penyewa = formData.get('penyewa');
@@ -875,6 +905,7 @@
                     
                     showToast();
                     e.target.reset();
+                    selectedLaptopKeys = []; // Kosongkan status centang state setelah data berhasil masuk database
                     if(currentTab === 'penyewaan') populateLaptopCheckboxes();
                 })
                 .catch((error) => {
