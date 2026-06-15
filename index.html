@@ -30,7 +30,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        // Import modul Authentication
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // =================================================================
@@ -60,17 +59,15 @@
         window.dbRemove = remove;
         window.dbUpdate = update;
         
-        // Pasang fungsi Auth ke global window
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
-        // Amati status login user secara real-time
+        // Listener status login
         onAuthStateChanged(auth, (user) => {
             const loginSection = document.getElementById('login-section');
             const mainAppSection = document.getElementById('main-app-section');
 
             if (user) {
-                // Jika user sudah login, sembunyikan form login, tampilkan aplikasi utama
                 loginSection.classList.add('hidden');
                 mainAppSection.classList.remove('hidden');
                 document.getElementById('user-logged-email').innerText = user.email;
@@ -79,7 +76,6 @@
                     initApp();
                 }
             } else {
-                // Jika belum login, tampilkan form login, sembunyikan aplikasi utama
                 loginSection.classList.remove('hidden');
                 mainAppSection.classList.add('hidden');
             }
@@ -88,6 +84,7 @@
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
 
+    <!-- FORM LOGIN -->
     <div id="login-section" class="flex items-center justify-center min-h-screen bg-slate-950 p-4">
         <div class="bg-white rounded-2xl shadow-xl border p-8 max-w-sm w-full space-y-6">
             <div class="text-center">
@@ -120,9 +117,10 @@
         </div>
     </div>
 
-
+    <!-- MAIN APP WINDOW -->
     <div id="main-app-section" class="flex h-screen overflow-hidden hidden">
         
+        <!-- SIDEBAR -->
         <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
             <div class="p-5 flex-1 overflow-y-auto">
                 <h1 class="text-xl font-bold tracking-wider text-cyan-400 mb-8">
@@ -225,6 +223,7 @@
         </div>
     </div>
 
+    <!-- EDIT MODAL -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -258,7 +257,6 @@
             list_laptop: []
         }; 
 
-        // Fungsi Handler Logika Login Form
         function handleLoginSubmit(e) {
             e.preventDefault();
             const email = document.getElementById('login-email').value;
@@ -270,7 +268,7 @@
 
             window.firebaseLogin(email, pass)
                 .catch(err => {
-                    alert("Gagal masuk! Periksa kembali email dan password Anda.\nDetail Error: " + err.message);
+                    alert("Gagal masuk! Periksa kembali email dan password Anda.\nDetail: " + err.message);
                     btnText.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Verifikasi & Masuk`;
                     btnText.disabled = false;
                 });
@@ -359,14 +357,15 @@
                     </select>
                 </div>
             `,
+            // MODIFIKASI: Mengubah input spesifikasi menjadi form input grid terpisah agar rapi
             list_laptop: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" placeholder="Contoh: Lenovo, ASUS, Dell" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="merk" placeholder="Lenovo, ASUS, Dell" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" placeholder="Contoh: ThinkPad T480, ROG G15" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" placeholder="ThinkPad T480, ROG G15" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (SN) Unit</label>
@@ -374,13 +373,28 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko</label>
-                    <input type="text" name="kode_toko" placeholder="Contoh: TK-01, LT-A5" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="kode_toko" placeholder="TK-01, LT-A5" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div class="md:col-span-2 bg-slate-50 p-4 border border-dashed rounded-xl grid grid-cols-2 gap-3">
+                    <span class="col-span-2 text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-microchip mr-1"></i> Detail Spesifikasi Unit</span>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-0.5">Processor</label>
+                        <input type="text" name="spec_proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-0.5">Kapasitas RAM</label>
+                        <input type="text" name="spec_ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-0.5">Penyimpanan (Storage)</label>
+                        <input type="text" name="spec_storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-0.5">VGA / Layar (Opsional)</label>
+                        <input type="text" name="spec_vga" placeholder="Intel UHD / Nvidia GTX / 14 Inch" class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                    </div>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Spesifikasi Singkat</label>
-                    <input type="text" name="spek" placeholder="Contoh: Core i5 Gen 8 / RAM 8GB / SSD 256GB" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status Ketersediaan</label>
                     <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                         <option value="Tersedia">Ready / Tersedia</option>
@@ -395,7 +409,7 @@
             services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
             penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
-            list_laptop: ['ID', 'Tanggal Input', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi', 'Status', 'Aksi']
+            list_laptop: ['ID', 'Tanggal Input', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Aksi']
         };
 
         const dataKeysMapping = {
@@ -542,7 +556,7 @@
                         <div>
                             <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
                             <span class="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold ml-1">${kdTokoText}</span>
-                            <span class="block text-xs text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek}</span>
+                            <span class="block text-xs text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek ? lap.spek.replace(/\n/g, ' / ') : ''}</span>
                             ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
                         </div>
                     </label>
@@ -573,7 +587,6 @@
                     const workbook = XLSX.read(data, { type: 'binary' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
-                    
                     const excelRows = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (excelRows.length === 0) {
@@ -581,16 +594,21 @@
                         return;
                     }
 
-                    if (!confirm(`Ditemukan ${excelRows.length} baris laptop. Apakah Anda ingin mengimpor semuanya langsung ke cloud database?`)) return;
+                    if (!confirm(`Ditemukan ${excelRows.length} baris laptop. Impor langsung ke cloud database?`)) return;
 
                     const targetNodeRef = window.dbRef(window.dbFirebase, 'list_laptop');
                     const d = new Date();
                     const tglInput = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-
                     let currentMaxId = globalDataCloud['list_laptop'].length === 0 ? 0 : Math.max(...globalDataCloud['list_laptop'].map(l => Number(l.id) || 0));
 
                     excelRows.forEach((row) => {
                         currentMaxId++;
+                        // Gabungkan baris jika spreadsheet bertipe kolom flat tunggal
+                        let textSpek = row.spek || row.Spek || row.spesifikasi || '';
+                        if(!textSpek && (row.processor || row.ram || row.storage)) {
+                            textSpek = `CPU: ${row.processor || '-'}\nRAM: ${row.ram || '-'}\nStorage: ${row.storage || '-'}\nVGA: ${row.vga || '-'}`;
+                        }
+
                         const newLaptopItem = {
                             id: currentMaxId,
                             tanggal: tglInput,
@@ -598,7 +616,7 @@
                             merk: row.merk || row.Merk || row.brand || '-',
                             tipe: row.tipe || row.Tipe || row.model || '-',
                             sn: String(row.sn || row.SN || row.serial || '-'),
-                            spek: row.spek || row.Spek || row.spesifikasi || '-',
+                            spek: textSpek || '-',
                             status: row.status || row.Status || 'Tersedia'
                         };
 
@@ -631,23 +649,14 @@
                 return;
             }
 
-            if (confirm(`🚨 PERINGATAN AKSES:\nAnda akan menghapus total seluruh data terinput (${currentDataLength} baris) khusus pada list [ ${targetName} ] secara permanen dari server Cloud.\n\nApakah Anda ingin memproses tindakan ini?`)) {
-                
-                const inputConfirm = prompt(`Untuk mengosongkan list ini, ketik kalimat konfirmasi tepat seperti di bawah ini (Gunakan HURUF BESAR):\n${currentTab.toUpperCase()}`);
-
+            if (confirm(`🚨 PERINGATAN AKSES:\nHapus seluruh data terinput (${currentDataLength} baris) list [ ${targetName} ] secara permanen dari server Cloud?`)) {
+                const inputConfirm = prompt(`Ketik kalimat verifikasi ini (Gunakan HURUF BESAR):\n${currentTab.toUpperCase()}`);
                 if (inputConfirm === currentTab.toUpperCase()) {
                     if (!window.dbFirebase) return;
-
                     const currentListRef = window.dbRef(window.dbFirebase, currentTab);
                     window.dbRemove(currentListRef)
-                        .then(() => {
-                            alert(`💥 Sukses! Seluruh data pada list [ ${targetName} ] berhasil dikosongkan.`);
-                        })
-                        .catch((err) => {
-                            alert(`Gagal menghapus data dari server: ${err.message}`);
-                        });
-                } else {
-                    alert("Tindakan dibatalkan. Kata kunci verifikasi yang Anda masukkan salah.");
+                        .then(() => alert(`💥 Sukses dikosongkan.`))
+                        .catch((err) => alert(`Gagal: ${err.message}`));
                 }
             }
         }
@@ -695,10 +704,11 @@
                                 </div>
                             </td>`;
                     } else if (key === 'spek' && currentTab === 'list_laptop') {
+                        // MODIFIKASI: Menampilkan list spesifikasi berbaris tipis dengan scrollbar jika teks terlampau panjang
                         rowHtml += `
                             <td class="px-4 py-3 text-xs text-slate-700 whitespace-normal max-w-xs">
-                                <div class="max-h-16 overflow-y-auto pr-1 custom-table-scrollbar">
-                                    ${val}
+                                <div class="max-h-20 overflow-y-auto pr-1 font-medium space-y-0.5 custom-table-scrollbar text-slate-600">
+                                    ${val.replace(/\n/g, '<br>')}
                                 </div>
                             </td>`;
                     } else if (key === 'sn' && currentTab === 'list_laptop') {
@@ -735,7 +745,6 @@
         window.openEditModal = function(firebaseKey) {
             const currentDataList = globalDataCloud[currentTab] || [];
             const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
-            
             if(!targetItem) return;
 
             document.getElementById('edit-firebase-key').value = firebaseKey;
@@ -744,114 +753,38 @@
 
             if (currentTab === 'services') {
                 fieldsContainer.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pelanggan</label>
-                        <input type="text" id="edit-pelanggan" value="${targetItem.pelanggan || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Perangkat</label>
-                        <input type="text" id="edit-perangkat" value="${targetItem.perangkat || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Gejala / Kerusakan</label>
-                        <textarea id="edit-kerusakan" rows="2" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.kerusakan || ''}</textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Estimasi Biaya (Rp)</label>
-                        <input type="number" id="edit-biaya" value="${targetItem.biaya || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="Antrean" ${targetItem.status === 'Antrean' ? 'selected' : ''}>Antrean</option>
-                            <option value="Proses" ${targetItem.status === 'Proses' ? 'selected' : ''}>Proses Pengecekan</option>
-                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai</option>
-                        </select>
-                    </div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Pelanggan</label><input type="text" id="edit-pelanggan" value="${targetItem.pelanggan || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Perangkat</label><input type="text" id="edit-perangkat" value="${targetItem.perangkat || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Gejala / Kerusakan</label><textarea id="edit-kerusakan" rows="2" required class="w-full border p-2 text-sm rounded-lg">${targetItem.kerusakan || ''}</textarea></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Estimasi Biaya (Rp)</label><input type="number" id="edit-biaya" value="${targetItem.biaya || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Antrean" ${targetItem.status === 'Antrean' ? 'selected' : ''}>Antrean</option><option value="Proses" ${targetItem.status === 'Proses' ? 'selected' : ''}>Proses Pengecekan</option><option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai</option></select></div>
                 `;
             } else if (currentTab === 'cctv') {
                 fieldsContainer.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Klien / Instansi</label>
-                        <input type="text" id="edit-klien" value="${targetItem.klien || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Lokasi Pemasangan</label>
-                        <input type="text" id="edit-lokasi" value="${targetItem.lokasi || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah Kamera CCTV</label>
-                        <input type="number" id="edit-jumlah_cctv" value="${targetItem.jumlah_cctv || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Progres Kerja</label>
-                        <input type="text" id="edit-progres" value="${targetItem.progres || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Proyek</label>
-                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="Survei" ${targetItem.status === 'Survei' ? 'selected' : ''}>Tahap Survei</option>
-                            <option value="Pengerjaan" ${targetItem.status === 'Pengerjaan' ? 'selected' : ''}>Sedang Dikerjakan</option>
-                            <option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai / Serah Terima</option>
-                        </select>
-                    </div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Klien</label><input type="text" id="edit-klien" value="${targetItem.klien || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Lokasi Pemasangan</label><input type="text" id="edit-lokasi" value="${targetItem.lokasi || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Jumlah CCTV</label><input type="number" id="edit-jumlah_cctv" value="${targetItem.jumlah_cctv || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Progres</label><input type="text" id="edit-progres" value="${targetItem.progres || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Proyek</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Survei" ${targetItem.status === 'Survei' ? 'selected' : ''}>Tahap Survei</option><option value="Pengerjaan" ${targetItem.status === 'Pengerjaan' ? 'selected' : ''}>Sedang Dikerjakan</option><option value="Selesai" ${targetItem.status === 'Selesai' ? 'selected' : ''}>Selesai</option></select></div>
                 `;
             } else if (currentTab === 'list_laptop') {
                 fieldsContainer.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label>
-                        <input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label>
-                        <input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label>
-                        <input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label>
-                        <input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label>
-                        <select id="edit-status" class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option>
-                            <option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option>
-                            <option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option>
-                        </select>
-                    </div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label><input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label><input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option></select></div>
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Singkat</label>
-                        <input type="text" id="edit-spek" value="${targetItem.spek || ''}" required class="w-full border p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Unit (Pisahkan dengan baris enter)</label>
+                        <textarea id="edit-spek" rows="4" required class="w-full border p-2 text-sm rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.spek || ''}</textarea>
                     </div>
                 `;
             } else if (currentTab === 'penyewaan') {
                 fieldsContainer.innerHTML = `
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Nama Penyewa</label>
-                        <input type="text" id="edit-penyewa" value="${targetItem.penyewa || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Selesai Sewa</label>
-                        <input type="date" id="edit-tgl_selesai" value="${targetItem.tgl_selesai || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Total Biaya Sewa (Rp)</label>
-                        <input type="number" id="edit-total_biaya" value="${targetItem.total_biaya || ''}" required class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label>
-                        <select id="edit-status" class="w-full border border-gray-300 p-2 text-sm rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option>
-                            <option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option>
-                            <option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option>
-                        </select>
-                    </div>
-                    <div class="bg-slate-50 border p-3 rounded-lg text-[11px] text-slate-500">
-                        <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-0.5"></i> Info: Daftar Laptop ber-SN yang disewa tidak dapat diganti dari menu ini demi menjaga keakuratan stok fisik real-time gudang Anda.
-                    </div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Penyewa</label><input type="text" id="edit-penyewa" value="${targetItem.penyewa || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Selesai</label><input type="date" id="edit-tgl_selesai" value="${targetItem.tgl_selesai || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Total Biaya (Rp)</label><input type="number" id="edit-total_biaya" value="${targetItem.total_biaya || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option><option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option><option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option></select></div>
                 `;
             }
 
@@ -912,15 +845,12 @@
                     closeEditModal();
                     showToast();
                 })
-                .catch((error) => {
-                    alert("Gagal memperbarui data: " + error.message);
-                });
+                .catch((error) => alert("Gagal: " + error.message));
         }
 
         window.markAsSelesai = function(firebaseKey) {
-            if(confirm("Apakah unit laptop sudah dikembalikan dengan aman dan pembayaran lunas?")) {
+            if(confirm("Apakah unit laptop sudah dikembalikan dan pembayaran lunas?")) {
                 const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
-                
                 if (sewaItem) {
                     if (sewaItem._linkedLaptopKeys) {
                         sewaItem._linkedLaptopKeys.forEach(laptopKey => {
@@ -928,25 +858,15 @@
                             window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
                         });
                     }
-                    
                     const sewaStatusRef = window.dbRef(window.dbFirebase, `penyewaan/${firebaseKey}`);
-                    window.dbUpdate(sewaStatusRef, { status: "Lunas" })
-                        .then(() => {
-                            showToast();
-                        })
-                        .catch((error) => {
-                            alert("Gagal memperbarui status sewa: " + error.message);
-                        });
+                    window.dbUpdate(sewaStatusRef, { status: "Lunas" }).then(() => showToast());
                 }
             }
         }
 
         function handleSubmit(e) {
             e.preventDefault();
-            if (!window.dbFirebase) {
-                alert("Koneksi internet bermasalah atau database belum siap.");
-                return;
-            }
+            if (!window.dbFirebase) return;
 
             const formData = new FormData(e.target);
             const currentData = globalDataCloud[currentTab] || [];
@@ -964,7 +884,7 @@
 
             if (currentTab === 'penyewaan') {
                 if (selectedLaptopKeys.length === 0) {
-                    alert("Silakan pilih minimal 1 laptop yang ingin disewa!");
+                    alert("Silakan pilih minimal 1 laptop!");
                     return;
                 }
 
@@ -974,9 +894,7 @@
                 selectedLaptopKeys.forEach(key => {
                     const targetLap = masterLaptop.find(l => l._firebaseKey === key);
                     if (targetLap) {
-                        const snText = targetLap.sn ? targetLap.sn : 'Tanpa SN';
-                        const kdTokoText = targetLap.kode_toko ? targetLap.kode_toko : '-';
-                        listUnitSewa.push(`• ${targetLap.merk} ${targetLap.tipe} [SN: ${snText}] [Kode: ${kdTokoText}]`);
+                        listUnitSewa.push(`• ${targetLap.merk} ${targetLap.tipe} [SN: ${targetLap.sn || 'Tanpa SN'}]`);
                         laptopKeysToUpdate.push(key);
                     }
                 });
@@ -987,6 +905,19 @@
                 newDataItem.status = formData.get('status');
                 newDataItem.unit = listUnitSewa.join(', ');
                 newDataItem._linkedLaptopKeys = laptopKeysToUpdate;
+            } else if (currentTab === 'list_laptop') {
+                // MODIFIKASI: Mengonversi isian sub-grid spek menjadi string multiline terstruktur sebelum dikirim ke Firebase
+                const proc = formData.get('spec_proc');
+                const ram = formData.get('spec_ram');
+                const storage = formData.get('spec_storage');
+                const vga = formData.get('spec_vga') ? formData.get('spec_vga') : 'Integrated';
+
+                newDataItem.merk = formData.get('merk');
+                newDataItem.tipe = formData.get('tipe');
+                newDataItem.sn = formData.get('sn');
+                newDataItem.kode_toko = formData.get('kode_toko');
+                newDataItem.status = formData.get('status');
+                newDataItem.spek = `CPU: ${proc}\nRAM: ${ram}\nSSD/HDD: ${storage}\nVGA: ${vga}`;
             } else {
                 for (let [key, value] of formData.entries()) {
                     newDataItem[key] = value;
@@ -1004,19 +935,16 @@
                             window.dbUpdate(laptopStatusRef, { status: "Disewa" });
                         });
                     }
-                    
                     showToast();
                     e.target.reset();
                     selectedLaptopKeys = []; 
                     if(currentTab === 'penyewaan') populateLaptopCheckboxes();
                 })
-                .catch((error) => {
-                    alert("Gagal menyimpan ke cloud: " + error.message);
-                });
+                .catch((error) => alert("Gagal: " + error.message));
         }
 
         function deleteRow(firebaseKey) {
-            if(confirm("Apakah kamu yakin ingin menghapus data ini dari cloud secara permanen?")) {
+            if(confirm("Hapus data secara permanen?")) {
                 if (currentTab === 'penyewaan') {
                     const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
                     if (sewaItem && sewaItem._linkedLaptopKeys && sewaItem.status !== 'Lunas') {
@@ -1026,12 +954,8 @@
                         });
                     }
                 }
-
                 const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
-                window.dbRemove(targetRowRef)
-                    .catch((error) => {
-                        alert("Gagal menghapus data dari cloud: " + error.message);
-                    });
+                window.dbRemove(targetRowRef);
             }
         }
 
