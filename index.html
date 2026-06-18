@@ -80,6 +80,62 @@
                 mainAppSection.classList.add('hidden');
             }
         });
+        // ... (kode Firebase lainnya tetap sama)
+
+    onAuthStateChanged(auth, (user) => {
+        const loginSection = document.getElementById('login-section');
+        const mainAppSection = document.getElementById('main-app-section');
+
+        if (user) {
+            loginSection.classList.add('hidden');
+            mainAppSection.classList.remove('hidden');
+            document.getElementById('user-logged-email').innerText = user.email;
+            
+            // LOGIKA HAK AKSES
+            // Sesuaikan email admin di bawah ini
+            const adminEmail = "admin@wanasatria.com"; 
+            const isAdmin = (user.email === adminEmail);
+            
+            renderNavMenu(isAdmin);
+            
+            if (typeof initApp === 'function') initApp();
+        } else {
+            loginSection.classList.add('hidden');
+            mainAppSection.classList.add('hidden');
+        }
+    });
+
+    // Fungsi untuk merender menu secara dinamis
+    window.renderNavMenu = function(isAdmin) {
+        const nav = document.querySelector('nav');
+        
+        // Menu yang bisa dilihat semua teknisi
+        let menuHTML = `
+            <button id="btn-list_laptop" onclick="switchTab('list_laptop')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-laptop w-6 text-center"></i> <span>List Laptop</span>
+            </button>
+            <button id="btn-laptop_display" onclick="switchTab('laptop_display')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-desktop w-6 text-center"></i> <span>Laptop Display</span>
+            </button>
+            <button id="btn-penyewaan" onclick="switchTab('penyewaan')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-boxes-packing w-6 text-center"></i> <span>Penyewaan</span>
+            </button>
+        `;
+
+        // Menu tambahan HANYA untuk Admin
+        if (isAdmin) {
+            menuHTML = `
+                <button id="btn-services" onclick="switchTab('services')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <i class="fa-solid fa-laptop-medical w-6 text-center"></i> <span>Log Services</span>
+                </button>
+                ${menuHTML}
+                <button id="btn-cctv" onclick="switchTab('cctv')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <i class="fa-solid fa-video w-6 text-center"></i> <span>Proyek CCTV</span>
+                </button>
+            `;
+        }
+        nav.innerHTML = menuHTML;
+    };
     </script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
