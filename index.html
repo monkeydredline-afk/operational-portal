@@ -504,6 +504,7 @@
                         <option value="Tersedia">Ready / Tersedia</option>
                         <option value="Disewa">Sedang Disewa</option>
                         <option value="Maintenance">Perbaikan / Rusak</option>
+                        <option value="Terjual">Sudah Terjual</option>
                     </select>
                 </div>
             `
@@ -527,7 +528,7 @@
             services: ['Antrean', 'Proses', 'Selesai'],
             penyewaan: ['Belum Bayar', 'DP 50%', 'Lunas'],
             cctv: ['Survei', 'Pengerjaan', 'Selesai'],
-            list_laptop: ['Tersedia', 'Disewa', 'Maintenance']
+            list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual']
         };
 
         window.openDashboardModal = function() {
@@ -637,6 +638,7 @@
             let lapReady = dataLaptop.filter(l => l.status === 'Tersedia').length;
             let lapSewa = dataLaptop.filter(l => l.status === 'Disewa').length;
             let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
+            let lapTerjual = dataLaptop.filter(l => l.status === 'Terjual').length;
 
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
@@ -644,10 +646,10 @@
             chartLaptopStockInstance = new Chart(ctxLaptop, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Tersedia ('+lapReady+')', 'Disewa ('+lapSewa+')', 'Maintenance ('+lapRusak+')'],
+                    labels: ['Tersedia ('+lapReady+')', 'Disewa ('+lapSewa+')', 'Maintenance ('+lapRusak+')', 'Terjual ('+lapTerjual+')'],
                     datasets: [{
-                        data: [lapReady, lapSewa, lapRusak],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                        data: [lapReady, lapSewa, lapRusak, lapTerjual],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
                         borderWidth: 2,
                         hoverOffset: 4
                     }]
@@ -957,6 +959,7 @@
                         if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
                         if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
                         if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
+                        if (val === 'Terjual') badgeColor = "bg-slate-200 text-slate-800";
                         rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
                     } else if (key === 'unit' && currentTab === 'penyewaan') {
                         rowHtml += `
@@ -1034,7 +1037,7 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label><input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option><option value="Terjual" ${targetItem.status === 'Terjual' ? 'selected' : ''}>Sudah Terjual</option></select></div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Unit (Pisahkan dengan baris enter)</label>
                         <textarea id="edit-spek" rows="4" required class="w-full border p-2 text-sm rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.spek || ''}</textarea>
