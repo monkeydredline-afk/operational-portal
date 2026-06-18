@@ -249,13 +249,13 @@
             
             <div class="p-6 bg-slate-50 overflow-y-auto max-h-[85vh] space-y-6">
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Antrean Servis</span>
-                            <span id="stat-services-pending" class="text-2xl font-black text-amber-600 mt-1 block">0</span>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Antrean Servis (Toko)</span>
+                            <span id="stat-services-pending" class="text-2xl font-black text-cyan-600 mt-1 block">0</span>
                         </div>
-                        <div class="bg-amber-50 text-amber-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-laptop-medical"></i></div>
+                        <div class="bg-cyan-50 text-cyan-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-laptop-medical"></i></div>
                     </div>
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -271,12 +271,39 @@
                         </div>
                         <div class="bg-blue-50 text-blue-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-video"></i></div>
                     </div>
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Total Unit Laptop Aset</span>
-                            <span id="stat-laptop-total" class="text-2xl font-black text-slate-700 mt-1 block">0</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                    <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider block border-b pb-1.5"><i class="fa-solid fa-warehouse mr-1 text-slate-400"></i> Live Status Inventaris Master Laptop (Total Aset: <span id="stat-laptop-total">0</span> Unit)</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-emerald-50/50 p-3 border border-emerald-100 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">Tersedia (Ready)</span>
+                                <span id="stat-laptop-ready" class="text-xl font-black text-emerald-600 block mt-0.5">0</span>
+                            </div>
+                            <div class="text-emerald-500 text-lg"><i class="fa-solid fa-circle-check"></i></div>
                         </div>
-                        <div class="bg-slate-100 text-slate-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-laptop"></i></div>
+                        <div class="bg-amber-50/50 p-3 border border-amber-100 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block">Sedang Disewa</span>
+                                <span id="stat-laptop-rented" class="text-xl font-black text-amber-600 block mt-0.5">0</span>
+                            </div>
+                            <div class="text-amber-500 text-lg"><i class="fa-solid fa-boxes-packing"></i></div>
+                        </div>
+                        <div class="bg-rose-50/50 p-3 border border-rose-100 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-rose-700 uppercase tracking-wider block">Rusak / Maintenance</span>
+                                <span id="stat-laptop-broken" class="text-xl font-black text-rose-600 block mt-0.5">0</span>
+                            </div>
+                            <div class="text-rose-500 text-lg"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                        </div>
+                        <div class="bg-slate-100 p-3 border border-slate-200 rounded-xl flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold text-slate-700 uppercase tracking-wider block">Sudah Terjual</span>
+                                <span id="stat-laptop-sold" class="text-xl font-black text-slate-700 block mt-0.5">0</span>
+                            </div>
+                            <div class="text-slate-400 text-lg"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+                        </div>
                     </div>
                 </div>
 
@@ -505,6 +532,7 @@
                         <option value="Disewa">Sedang Disewa</option>
                         <option value="Maintenance">Perbaikan / Rusak</option>
                         <option value="Terjual">Sudah Terjual</option>
+                        <option value="Staf">Digunakan Oleh Staf</option>
                     </select>
                 </div>
             `
@@ -528,7 +556,7 @@
             services: ['Antrean', 'Proses', 'Selesai'],
             penyewaan: ['Belum Bayar', 'DP 50%', 'Lunas'],
             cctv: ['Survei', 'Pengerjaan', 'Selesai'],
-            list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual']
+            list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual', 'Staf']
         };
 
         window.openDashboardModal = function() {
@@ -540,7 +568,7 @@
             document.getElementById('dashboard-modal').classList.add('hidden');
         }
 
-        // FUNGSI UTAMA: KALKULASI DINAMIS BERDASARKAN INPUT CLOUD DAN GAMBAR TABEL KELOMPOK MEREK
+        // FUNGSI UTAMA: KALKULASI DINAMIS BERDASARKAN INPUT CLOUD DAN UPDATE PANEL STATISTIK
         function calculateAndRenderStats() {
             const dataServices = globalDataCloud['services'] || [];
             const dataPenyewaan = globalDataCloud['penyewaan'] || [];
@@ -554,29 +582,39 @@
             dataPenyewaan.forEach(p => { totalOmsetSewa += (Number(p.total_biaya) || 0); });
             
             let activeCctv = dataCctv.filter(c => c.status === 'Survei' || c.status === 'Pengerjaan').length;
+            
+            // Perhitungan Inventaris Laptop Gudang Lengkap
             let totalLaptopAset = dataLaptop.length;
+            let lapReady = dataLaptop.filter(l => l.status === 'Tersedia').length;
+            let lapSewa = dataLaptop.filter(l => l.status === 'Disewa').length;
+            let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
+            let lapTerjual = dataLaptop.filter(l => l.status === 'Terjual').length;
+            let lapStaf = dataLaptop.filter(l => l.status === 'Staf').length;
 
+            // Masukkan data ke Elemen HTML Dashboard
             document.getElementById('stat-services-pending').innerText = pendingServices;
             document.getElementById('stat-rent-omset').innerText = 'Rp ' + totalOmsetSewa.toLocaleString('id-ID');
             document.getElementById('stat-cctv-active').innerText = activeCctv;
+            
+            // Update Sub-Dashboard Inventaris Laptop
             document.getElementById('stat-laptop-total').innerText = totalLaptopAset;
+            document.getElementById('stat-laptop-ready').innerText = lapReady;
+            document.getElementById('stat-laptop-rented').innerText = lapSewa;
+            document.getElementById('stat-laptop-broken').innerText = lapRusak;
+            document.getElementById('stat-laptop-sold').innerText = lapTerjual;
 
-            // 2. MODIFIKASI FITUR BARU: Pemetaan Distribusi Model Laptop Secara Otomatis
+            // 2. Pemetaan Distribusi Model Laptop Secara Otomatis
             let modelCounts = {};
             dataLaptop.forEach(lap => {
                 let merkText = (lap.merk || '').trim();
                 let tipeText = (lap.tipe || '').trim();
-                // Gabungkan nama Brand + Tipe secara rapi (contoh: Lenovo ThinkPad L480)
                 let fullModelName = `${merkText} ${tipeText}`.trim();
                 
                 if(!fullModelName || fullModelName === "- -") fullModelName = "Model Tidak Diketahui";
-                
                 modelCounts[fullModelName] = (modelCounts[fullModelName] || 0) + 1;
             });
 
-            // Urutkan daftar alfabetis nama unit laptop agar rapi di panel dashboard
             let sortedModels = Object.keys(modelCounts).sort();
-            
             const modelsTbody = document.getElementById('dashboard-laptop-models-tbody');
             modelsTbody.innerHTML = '';
             
@@ -635,21 +673,16 @@
             });
 
             // 4. Render Grafik B: Status Ketersediaan Aset Laptop Gudang
-            let lapReady = dataLaptop.filter(l => l.status === 'Tersedia').length;
-            let lapSewa = dataLaptop.filter(l => l.status === 'Disewa').length;
-            let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
-            let lapTerjual = dataLaptop.filter(l => l.status === 'Terjual').length;
-
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
             chartLaptopStockInstance = new Chart(ctxLaptop, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Tersedia ('+lapReady+')', 'Disewa ('+lapSewa+')', 'Maintenance ('+lapRusak+')', 'Terjual ('+lapTerjual+')'],
+                    labels: ['Tersedia ('+lapReady+')', 'Disewa ('+lapSewa+')', 'Maintenance ('+lapRusak+')', 'Terjual ('+lapTerjual+')', 'Staf ('+lapStaf+')'],
                     datasets: [{
-                        data: [lapReady, lapSewa, lapRusak, lapTerjual],
-                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b'],
+                        data: [lapReady, lapSewa, lapRusak, lapTerjual, lapStaf],
+                        backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#64748b', '#6366f1'],
                         borderWidth: 2,
                         hoverOffset: 4
                     }]
@@ -818,7 +851,7 @@
                             <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
                             <span class="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold ml-1">${kdTokoText}</span>
                             <span class="block text-xs text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span> | ${lap.spek ? lap.spek.replace(/\n/g, ' / ') : ''}</span>
-                            ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
+                            ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status === 'Staf' ? 'Digunakan Staf' : lap.status}</span>` : ''}
                         </div>
                     </label>
                 `;
@@ -956,11 +989,13 @@
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">Rp ${Number(val).toLocaleString('id-ID')}</td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
+                        let displayVal = val;
                         if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia') badgeColor = "bg-emerald-100 text-emerald-800";
                         if (val === 'Belum Bayar' || val === 'Maintenance') badgeColor = "bg-rose-100 text-rose-800";
                         if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
                         if (val === 'Terjual') badgeColor = "bg-slate-200 text-slate-800";
-                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${val}</span></td>`;
+                        if (val === 'Staf') { badgeColor = "bg-indigo-100 text-indigo-800"; displayVal = "Digunakan Staf"; }
+                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${badgeColor}">${displayVal}</span></td>`;
                     } else if (key === 'unit' && currentTab === 'penyewaan') {
                         rowHtml += `
                             <td class="px-4 py-3 text-xs font-mono text-slate-700 whitespace-normal max-w-xs">
@@ -1037,7 +1072,7 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label><input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option><option value="Terjual" ${targetItem.status === 'Terjual' ? 'selected' : ''}>Sudah Terjual</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option><option value="Terjual" ${targetItem.status === 'Terjual' ? 'selected' : ''}>Sudah Terjual</option><option value="Staf" ${targetItem.status === 'Staf' ? 'selected' : ''}>Digunakan Oleh Staf</option></select></div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Spesifikasi Unit (Pisahkan dengan baris enter)</label>
                         <textarea id="edit-spek" rows="4" required class="w-full border p-2 text-sm rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.spek || ''}</textarea>
