@@ -52,7 +52,6 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
-        // Pasang ke global window agar script di bawah bisa mengakses
         window.dbFirebase = db;
         window.dbRef = ref;
         window.dbSet = set;
@@ -64,7 +63,6 @@
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
-        // Listener status login
         onAuthStateChanged(auth, (user) => {
             const loginSection = document.getElementById('login-section');
             const mainAppSection = document.getElementById('main-app-section');
@@ -278,7 +276,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider block border-b pb-1.5"><i class="fa-solid fa-warehouse mr-1 text-slate-400"></i> Live Status Inventaris Master Laptop (Total Aset: <span id="stat-laptop-total">0</span> Unit)</span>
+                    <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider block border-b pb-1.5"><i class="fa-solid fa-warehouse mr-1 text-slate-400"></i> Live Status Inventaris Master Laptop Gudang (Total Aset: <span id="stat-laptop-total">0</span> Unit)</span>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div class="bg-emerald-50/50 p-3 border border-emerald-100 rounded-xl flex items-center justify-between">
                             <div>
@@ -312,7 +310,7 @@
                 </div>
 
                 <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-                    <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider block border-b pb-1.5"><i class="fa-solid fa-desktop mr-1 text-slate-400"></i> Live Monitor Laptop Etalase (Total Display: <span id="stat-display-total">0</span> Unit)</span>
+                    <span class="text-xs font-extrabold text-slate-500 uppercase tracking-wider block border-b pb-1.5"><i class="fa-solid fa-desktop mr-1 text-slate-400"></i> Live Monitor Laptop Etalase / Display (Total Display: <span id="stat-display-total">0</span> Unit)</span>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         <div class="bg-cyan-50/50 p-3 border border-cyan-100 rounded-xl flex items-center justify-between">
                             <div>
@@ -338,23 +336,25 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
                         <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-business-time text-cyan-600 mr-1"></i> Progres Servis & CCTV</h4>
                         <div class="relative flex-1" style="min-height: 250px;">
                             <canvas id="chartWorkload"></canvas>
                         </div>
                     </div>
                     
-                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
-                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-cyan-600 mr-1"></i> Status Ketersediaan Unit</h4>
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-cyan-600 mr-1"></i> Status Ketersediaan Unit Gudang</h4>
                         <div class="relative flex-1" style="min-height: 250px;">
                             <canvas id="chartLaptopStock"></canvas>
                         </div>
                     </div>
+                </div>
 
-                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col md:col-span-1">
-                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-list-ol text-cyan-600 mr-1"></i> Detail Distribusi Model Aset</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-list-ol text-cyan-600 mr-1"></i> Detail Distribusi Aset Gudang</h4>
                         <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[250px] pr-1">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead class="bg-slate-50 text-slate-600 sticky top-0 font-bold border-b">
@@ -365,6 +365,23 @@
                                 </thead>
                                 <tbody id="dashboard-laptop-models-tbody" class="divide-y text-slate-700">
                                     <tr><td colspan="2" class="px-2 py-4 text-center text-gray-400 italic">Memproses data gudang...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
+                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-store text-cyan-600 mr-1"></i> Detail Distribusi Aset Display (Etalase)</h4>
+                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[250px] pr-1">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50 text-slate-600 sticky top-0 font-bold border-b">
+                                    <tr>
+                                        <th class="px-2 py-1.5">Nama Model / Unit</th>
+                                        <th class="px-2 py-1.5 text-right">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-display-models-tbody" class="divide-y text-slate-700">
+                                    <tr><td colspan="2" class="px-2 py-4 text-center text-gray-400 italic">Memproses data etalase...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -388,10 +405,10 @@
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </header>
-            <form id="edit-form" onsubmit="handleUpdateSubmit(event)" class="p-6 space-y-4">
+            <form id="edit-form" onsubmit="handleUpdateSubmit(event)" class="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
                 <input type="hidden" id="edit-firebase-key">
                 <div id="edit-modal-fields" class="grid grid-cols-1 gap-4"></div>
-                <div class="flex justify-end space-x-3 pt-4 border-t">
+                <div class="flex justify-end space-x-3 pt-4 border-t sticky bottom-0 bg-white">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-100 font-medium transition">Batal</button>
                     <button type="submit" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-1.5">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Perbarui Online
@@ -523,6 +540,10 @@
             `,
             list_laptop: `
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Input Master</label>
+                    <input type="date" name="tanggal" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
                     <select name="cabang" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                         <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
@@ -587,6 +608,10 @@
                 </div>
             `,
             laptop_display: `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Masuk Etalase</label>
+                    <input type="date" name="tanggal" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
                     <select name="cabang" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
@@ -659,16 +684,16 @@
             services: ['ID', 'Tanggal', 'Pelanggan', 'Perangkat', 'Kerusakan', 'Biaya', 'Status', 'Aksi'],
             penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Mulai', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
-            list_laptop: ['ID', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
-            laptop_display: ['ID', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi']
+            list_laptop: ['ID', 'Tanggal Input', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
+            laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi']
         };
 
         const dataKeysMapping = {
             services: ['id', 'tanggal', 'pelanggan', 'perangkat', 'kerusakan', 'biaya', 'status'],
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_mulai', 'tgl_selesai', 'total_biaya', 'status'],
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
-            list_laptop: ['id', 'cabang', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status', 'catatan'],
-            laptop_display: ['id', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan']
+            list_laptop: ['id', 'tanggal', 'cabang', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status', 'catatan'],
+            laptop_display: ['id', 'tanggal', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan']
         };
 
         const filterOptionsTemplate = {
@@ -728,6 +753,7 @@
             document.getElementById('stat-display-sold').innerText = dispSold;
             document.getElementById('stat-display-off').innerText = dispOff;
 
+            // --- 1. Distribusi Model Laptop Gudang ---
             let modelCounts = {};
             dataLaptop.forEach(lap => {
                 let merkText = (lap.merk || '').trim();
@@ -740,22 +766,54 @@
 
             let sortedModels = Object.keys(modelCounts).sort();
             const modelsTbody = document.getElementById('dashboard-laptop-models-tbody');
-            modelsTbody.innerHTML = '';
-            
-            if(sortedModels.length === 0) {
-                modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit laptop di master data</td></tr>`;
-            } else {
-                sortedModels.forEach(modelName => {
-                    let totalUnitPerModel = modelCounts[modelName];
-                    modelsTbody.innerHTML += `
-                        <tr class="hover:bg-slate-100 transition">
-                            <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
-                            <td class="px-2 py-1.5 text-right font-bold text-slate-900">${totalUnitPerModel}</td>
-                        </tr>
-                    `;
-                });
+            if (modelsTbody) {
+                modelsTbody.innerHTML = '';
+                if(sortedModels.length === 0) {
+                    modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit laptop di master data</td></tr>`;
+                } else {
+                    sortedModels.forEach(modelName => {
+                        let totalUnitPerModel = modelCounts[modelName];
+                        modelsTbody.innerHTML += `
+                            <tr class="hover:bg-slate-100 transition">
+                                <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
+                                <td class="px-2 py-1.5 text-right font-bold text-slate-900">${totalUnitPerModel}</td>
+                            </tr>
+                        `;
+                    });
+                }
             }
 
+            // --- 2. Distribusi Model Laptop Display ---
+            let displayModelCounts = {};
+            dataDisplay.forEach(disp => {
+                let merkText = (disp.merk || '').trim();
+                let tipeText = (disp.tipe || '').trim();
+                let fullModelName = `${merkText} ${tipeText}`.trim();
+                
+                if(!fullModelName || fullModelName === "- -") fullModelName = "Model Tidak Diketahui";
+                displayModelCounts[fullModelName] = (displayModelCounts[fullModelName] || 0) + 1;
+            });
+
+            let sortedDisplayModels = Object.keys(displayModelCounts).sort();
+            const displayModelsTbody = document.getElementById('dashboard-display-models-tbody');
+            if (displayModelsTbody) {
+                displayModelsTbody.innerHTML = '';
+                if(sortedDisplayModels.length === 0) {
+                    displayModelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit display di etalase</td></tr>`;
+                } else {
+                    sortedDisplayModels.forEach(modelName => {
+                        let totalUnitPerModel = displayModelCounts[modelName];
+                        displayModelsTbody.innerHTML += `
+                            <tr class="hover:bg-slate-100 transition">
+                                <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
+                                <td class="px-2 py-1.5 text-right font-bold text-slate-900">${totalUnitPerModel}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            // --- 3. Chart Progres ---
             let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
             let sProses = dataServices.filter(s => s.status === 'Proses').length;
             let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
@@ -795,6 +853,7 @@
                 }
             });
 
+            // --- 4. Chart Ketersediaan Laptop Gudang ---
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
@@ -870,6 +929,16 @@
             document.getElementById('page-title').innerText = titles[tabName];
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
+
+            // Auto-fill tanggal hari ini jika input type="date" name="tanggal" tersedia di form-fields
+            const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
+            if (dateInput) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
 
             const filterDropdown = document.getElementById('status-filter');
             if (filterDropdown) {
@@ -1177,6 +1246,16 @@
             });
         }
 
+        // Helper untuk mengubah DD/MM/YYYY dari database ke YYYY-MM-DD agar masuk di input type="date"
+        function formatDateForInput(dateStr) {
+            if(!dateStr) return '';
+            if(dateStr.includes('/')) {
+                const parts = dateStr.split('/');
+                if(parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+            }
+            return dateStr;
+        }
+
         window.openEditModal = function(firebaseKey) {
             const currentDataList = globalDataCloud[currentTab] || [];
             const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
@@ -1204,6 +1283,7 @@
                 `;
             } else if (currentTab === 'list_laptop') {
                 fieldsContainer.innerHTML = `
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Input</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><select id="edit-cabang" class="w-full border p-2 text-sm rounded-lg"><option value="Monumen Emmy Saelan" ${targetItem.cabang === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option><option value="Perintis" ${targetItem.cabang === 'Perintis' ? 'selected' : ''}>Perintis</option></select></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label><input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
@@ -1228,6 +1308,7 @@
                 `;
             } else if (currentTab === 'laptop_display') { 
                 fieldsContainer.innerHTML = `
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Masuk</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><select id="edit-cabang" class="w-full border p-2 text-sm rounded-lg"><option value="Monumen Emmy Saelan" ${targetItem.cabang === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option><option value="Perintis" ${targetItem.cabang === 'Perintis' ? 'selected' : ''}>Perintis</option></select></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Teknisi</label><input type="text" id="edit-teknisi" value="${targetItem.teknisi || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
@@ -1270,6 +1351,11 @@
                 updatedData.progres = document.getElementById('edit-progres').value;
                 updatedData.status = document.getElementById('edit-status').value;
             } else if (currentTab === 'list_laptop') {
+                let editTgl = document.getElementById('edit-tanggal').value;
+                if (editTgl && editTgl.includes('-')) {
+                    const parts = editTgl.split('-');
+                    updatedData.tanggal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
                 updatedData.cabang = document.getElementById('edit-cabang').value;
                 updatedData.kode_toko = document.getElementById('edit-kode_toko').value;
                 updatedData.merk = document.getElementById('edit-merk').value;
@@ -1279,6 +1365,11 @@
                 updatedData.status = document.getElementById('edit-status').value;
                 updatedData.catatan = document.getElementById('edit-catatan').value;
             } else if (currentTab === 'laptop_display') { 
+                let editTgl = document.getElementById('edit-tanggal').value;
+                if (editTgl && editTgl.includes('-')) {
+                    const parts = editTgl.split('-');
+                    updatedData.tanggal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
                 updatedData.cabang = document.getElementById('edit-cabang').value;
                 updatedData.teknisi = document.getElementById('edit-teknisi').value;
                 updatedData.merk = document.getElementById('edit-merk').value;
@@ -1343,10 +1434,16 @@
             const d = new Date();
             const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-            const newDataItem = {
-                id: nextId,
-                tanggal: tanggalHariIni
-            };
+            const newDataItem = { id: nextId };
+
+            // Cek apakah ada input tanggal manual dari form, kalau ada ubah YYYY-MM-DD jadi DD/MM/YYYY
+            let inputTgl = formData.get('tanggal');
+            if (inputTgl && inputTgl.includes('-')) {
+                const parts = inputTgl.split('-');
+                newDataItem.tanggal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            } else {
+                newDataItem.tanggal = tanggalHariIni;
+            }
 
             let laptopKeysToUpdate = [];
 
@@ -1407,7 +1504,8 @@
                 newDataItem.spek_singkat = `CPU: ${proc}\nRAM: ${ram}\nSSD/HDD: ${storage}\nVGA/Layar: ${vga} (${screen})`;
             } else {
                 for (let [key, value] of formData.entries()) {
-                    newDataItem[key] = value;
+                    // Jangan timpa id atau tanggal yang sudah diset di atas
+                    if(key !== 'id' && key !== 'tanggal') newDataItem[key] = value;
                 }
             }
 
@@ -1424,6 +1522,15 @@
                     }
                     showToast();
                     e.target.reset();
+                    // Kembalikan input tanggal ke hari ini setelah di reset
+                    const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
+                    if (dateInput) {
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getDate()).padStart(2, '0');
+                        dateInput.value = `${yyyy}-${mm}-${dd}`;
+                    }
                     selectedLaptopKeys = []; 
                     if(currentTab === 'penyewaan') populateLaptopCheckboxes();
                 })
