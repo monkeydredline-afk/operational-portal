@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
-        /* Desain scrollbar minimalis khusus untuk kolom tabel yang padat data */
         .custom-table-scrollbar::-webkit-scrollbar {
             width: 4px;
             height: 4px;
@@ -27,6 +26,11 @@
             background: #94a3b8;
             border-radius: 4px;
         }
+        /* Style agar datalist combo-box terlihat lebih natural */
+        input::-webkit-calendar-picker-indicator {
+            opacity: 0.6;
+            cursor: pointer;
+        }
     </style>
 
     <script type="module">
@@ -35,7 +39,7 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // =================================================================
-        // KONFIGURASI FIREBASE (SERVER AMERIKA - DATA ANDA PASTI MUNCUL)
+        // KONFIGURASI FIREBASE
         // =================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyColh0-AXgzBs_qIyIX7vj9C7As2KsEQRs",
@@ -47,7 +51,6 @@
             appId: "1:535247512587:web:499ccf9a6ae310d6c6930e"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const auth = getAuth(app);
@@ -63,9 +66,8 @@
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
-        window.currentUserEmail = null; // Menyimpan email untuk hak akses
+        window.currentUserEmail = null;
 
-        // HANYA 1 onAuthStateChanged AGAR LEBIH STABIL
         onAuthStateChanged(auth, (user) => {
             const loginSection = document.getElementById('login-section');
             const mainAppSection = document.getElementById('main-app-section');
@@ -156,7 +158,7 @@
                     <i class="fa-solid fa-dumpster-fire"></i> <span id="clear-btn-text">Kosongkan List Ini</span>
                 </button>
                 <div class="text-[10px] text-slate-500 text-center tracking-wide pt-1">
-                    V2.0 Cloud Operational System
+                    V2.1 Cloud Operational System
                 </div>
             </div>
         </div>
@@ -254,7 +256,6 @@
             </header>
             
             <div class="p-6 bg-slate-50 overflow-y-auto max-h-[85vh] space-y-6">
-                <!-- ISIAN DASHBOARD (Disembunyikan kodenya untuk keterbacaan, strukturnya sama dengan yang terakhir) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -357,8 +358,19 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
-                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-list-ol text-cyan-600 mr-1"></i> Detail Distribusi Aset Gudang</h4>
-                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[250px] pr-1">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b pb-2">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-list-ol text-cyan-600 mr-1"></i> Detail Distribusi Aset Gudang
+                            </h4>
+                            <div class="flex items-center gap-1 text-[11px]">
+                                <select id="filter-gudang-cabang" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                    <option value="">Semua Cabang</option>
+                                    <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
+                                    <option value="Perintis">Perintis</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[210px] pr-1">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead class="bg-slate-50 text-slate-600 sticky top-0 font-bold border-b">
                                     <tr>
@@ -434,6 +446,31 @@
             </form>
         </div>
     </div>
+
+    <!-- DAFTAR MASTER COMBO-BOX / DATALIST (Dapat ditambahkan manual saat pengetikan form) -->
+    <datalist id="list-cabang">
+        <option value="Monumen Emmy Saelan"></option>
+        <option value="Perintis"></option>
+    </datalist>
+    <datalist id="list-teknisi">
+        <option value="RESKY"></option>
+    </datalist>
+    <datalist id="list-merk">
+        <option value="Lenovo"></option>
+        <option value="ASUS"></option>
+        <option value="Acer"></option>
+        <option value="HP"></option>
+        <option value="Dell"></option>
+        <option value="MSI"></option>
+        <option value="Apple"></option>
+    </datalist>
+    <datalist id="list-tipe">
+        <option value="ThinkPad T490s"></option>
+        <option value="ThinkPad T480s"></option>
+        <option value="ThinkPad T460"></option>
+        <option value="ThinkPad L13 Yoga"></option>
+        <option value="IdeaPad 330S"></option>
+    </datalist>
 
     <script>
         let currentTab = 'services';
@@ -562,10 +599,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
-                    <select name="cabang" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
-                        <option value="Perintis">Perintis</option>
-                    </select>
+                    <input type="text" name="cabang" list="list-cabang" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko</label>
@@ -573,11 +607,11 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" placeholder="Lenovo, ASUS, Dell" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="merk" list="list-merk" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" placeholder="ThinkPad T480, ROG G15" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (SN) Unit</label>
@@ -631,22 +665,19 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
-                    <select name="cabang" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
-                        <option value="Perintis">Perintis</option>
-                    </select>
+                    <input type="text" name="cabang" list="list-cabang" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Teknisi</label>
-                    <input type="text" name="teknisi" placeholder="Masukkan nama teknisi" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="teknisi" list="list-teknisi" placeholder="Pilih / ketik nama teknisi..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" placeholder="Lenovo, ASUS, HP" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="merk" list="list-merk" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" placeholder="ThinkPad L13 Yoga, IdeaPad 330S" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Seri (SN) / Identitas</label>
@@ -721,9 +752,6 @@
             laptop_display: ['Ready', 'Terjual', 'Gudang']
         };
 
-        // =======================================================
-        // FUNGSI UNTUK MENGATUR HAK AKSES BERDASARKAN EMAIL
-        // =======================================================
         function applyRoleBasedAccess() {
             const email = window.currentUserEmail;
             
@@ -733,21 +761,17 @@
             const btnDashboard = document.getElementById('btn-dashboard');
             
             if (email === 'teknisi@wanasatria.com') {
-                // Sembunyikan fitur-fitur ini dari teknisi
                 if (btnServices) btnServices.style.display = 'none';
                 if (btnCctv) btnCctv.style.display = 'none';
-                if (btnClear) btnClear.style.display = 'none'; // Cegah hapus semua data
-                if (btnDashboard) btnDashboard.style.display = 'none'; // Sembunyikan Dashboard
-                
-                return 'list_laptop'; // Kembalikan List Laptop sebagai tab pertama
+                if (btnClear) btnClear.style.display = 'none'; 
+                if (btnDashboard) btnDashboard.style.display = 'none'; 
+                return 'list_laptop'; 
             } else {
-                // Tampilkan semua untuk admin atau user lain
                 if (btnServices) btnServices.style.display = '';
                 if (btnCctv) btnCctv.style.display = '';
                 if (btnClear) btnClear.style.display = '';
                 if (btnDashboard) btnDashboard.style.display = '';
-                
-                return 'services'; // Kembalikan Log Services sebagai tab pertama
+                return 'services'; 
             }
         }
 
@@ -839,8 +863,16 @@
             document.getElementById('stat-display-sold').innerText = dispSold;
             document.getElementById('stat-display-off').innerText = dispOff;
 
+            // Logika Tabel Distribusi Gudang
+            const gudangBranchVal = document.getElementById('filter-gudang-cabang').value;
+            let filteredLaptopWarehouse = dataLaptop;
+
+            if (gudangBranchVal) {
+                filteredLaptopWarehouse = filteredLaptopWarehouse.filter(lap => lap.cabang === gudangBranchVal);
+            }
+
             let modelCounts = {};
-            dataLaptop.forEach(lap => {
+            filteredLaptopWarehouse.forEach(lap => {
                 let merkText = (lap.merk || '').trim();
                 let tipeText = (lap.tipe || '').trim();
                 let fullModelName = `${merkText} ${tipeText}`.trim();
@@ -854,7 +886,7 @@
             if (modelsTbody) {
                 modelsTbody.innerHTML = '';
                 if(sortedModels.length === 0) {
-                    modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit laptop di master data</td></tr>`;
+                    modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Tidak ada unit laptop pada cabang ini</td></tr>`;
                 } else {
                     sortedModels.forEach(modelName => {
                         let totalUnitPerModel = modelCounts[modelName];
@@ -868,6 +900,7 @@
                 }
             }
 
+            // Logika Tabel Distribusi Display
             let displayModelCounts = {};
             filteredDisplay.forEach(disp => {
                 let merkText = (disp.merk || '').trim();
@@ -897,6 +930,7 @@
                 }
             }
 
+            // --- 3. Chart Progres ---
             let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
             let sProses = dataServices.filter(s => s.status === 'Proses').length;
             let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
@@ -936,6 +970,7 @@
                 }
             });
 
+            // --- 4. Chart Ketersediaan Laptop Gudang ---
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
@@ -960,12 +995,40 @@
             });
         }
 
+        // Fungsi khusus untuk memasukkan cabang manual ke dropdown dashboard
+        function updateDashboardBranchFilters() {
+            let branches = new Set();
+            branches.add("Monumen Emmy Saelan");
+            branches.add("Perintis");
+
+            (globalDataCloud['list_laptop'] || []).forEach(item => { if(item.cabang) branches.add(item.cabang); });
+            (globalDataCloud['laptop_display'] || []).forEach(item => { if(item.cabang) branches.add(item.cabang); });
+            
+            const gudangSelect = document.getElementById('filter-gudang-cabang');
+            const displaySelect = document.getElementById('filter-display-cabang');
+            
+            if (!gudangSelect || !displaySelect) return;
+
+            let currentGudang = gudangSelect.value;
+            let currentDisplay = displaySelect.value;
+
+            let optionsHtml = '<option value="">Semua Cabang</option>';
+            [...branches].sort().forEach(b => {
+                optionsHtml += `<option value="${b}">${b}</option>`;
+            });
+
+            gudangSelect.innerHTML = optionsHtml;
+            displaySelect.innerHTML = optionsHtml;
+
+            gudangSelect.value = currentGudang;
+            displaySelect.value = currentDisplay;
+        }
+
         function initApp() {
             const d = new Date();
             const opsiHari = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date').innerText = d.toLocaleDateString('id-ID', opsiHari);
 
-            // Menerapkan Hak Akses dan mendapatkan Tab awal yang sesuai
             const defaultTab = applyRoleBasedAccess();
             switchTab(defaultTab);
 
@@ -979,6 +1042,9 @@
                     
                     if (currentTab === node) {
                         renderTable();
+                    }
+                    if (node === 'list_laptop' || node === 'laptop_display') {
+                        updateDashboardBranchFilters();
                     }
                     if (node === 'list_laptop' && currentTab === 'penyewaan') {
                         populateLaptopCheckboxes();
@@ -1366,10 +1432,10 @@
             } else if (currentTab === 'list_laptop') {
                 fieldsContainer.innerHTML = `
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Input</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><select id="edit-cabang" class="w-full border p-2 text-sm rounded-lg"><option value="Monumen Emmy Saelan" ${targetItem.cabang === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option><option value="Perintis" ${targetItem.cabang === 'Perintis' ? 'selected' : ''}>Perintis</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><input type="text" id="edit-cabang" list="list-cabang" value="${targetItem.cabang || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Kode Toko</label><input type="text" id="edit-kode_toko" value="${targetItem.kode_toko || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" list="list-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" list="list-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label><input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Ketersediaan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Tersedia" ${targetItem.status === 'Tersedia' ? 'selected' : ''}>Ready / Tersedia</option><option value="Disewa" ${targetItem.status === 'Disewa' ? 'selected' : ''}>Sedang Disewa</option><option value="Maintenance" ${targetItem.status === 'Maintenance' ? 'selected' : ''}>Perbaikan / Rusak</option><option value="Terjual" ${targetItem.status === 'Terjual' ? 'selected' : ''}>Sudah Terjual</option><option value="Staf" ${targetItem.status === 'Staf' ? 'selected' : ''}>Digunakan Oleh Staf</option></select></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Catatan Tambahan</label><input type="text" id="edit-catatan" value="${targetItem.catatan || ''}" class="w-full border p-2 text-sm rounded-lg"></div>
@@ -1391,10 +1457,10 @@
             } else if (currentTab === 'laptop_display') { 
                 fieldsContainer.innerHTML = `
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Masuk</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><select id="edit-cabang" class="w-full border p-2 text-sm rounded-lg"><option value="Monumen Emmy Saelan" ${targetItem.cabang === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option><option value="Perintis" ${targetItem.cabang === 'Perintis' ? 'selected' : ''}>Perintis</option></select></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Teknisi</label><input type="text" id="edit-teknisi" value="${targetItem.teknisi || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Cabang Toko</label><input type="text" id="edit-cabang" list="list-cabang" value="${targetItem.cabang || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Teknisi</label><input type="text" id="edit-teknisi" list="list-teknisi" value="${targetItem.teknisi || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Brand / Merk</label><input type="text" id="edit-merk" list="list-merk" value="${targetItem.merk || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tipe / Model</label><input type="text" id="edit-tipe" list="list-tipe" value="${targetItem.tipe || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Serial Number (SN)</label><input type="text" id="edit-sn" value="${targetItem.sn || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Harga Jual Display (Rp)</label><input type="number" id="edit-harga_jual" value="${targetItem.harga_jual || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Pajangan</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Ready" ${targetItem.status === 'Ready' ? 'selected' : ''}>Ready di Etalase</option><option value="Terjual" ${targetItem.status === 'Terjual' ? 'selected' : ''}>Sudah Terjual</option><option value="Gudang" ${targetItem.status === 'Gudang' ? 'selected' : ''}>Ditarik ke Gudang (Off)</option></select></div>
