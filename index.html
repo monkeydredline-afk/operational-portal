@@ -63,6 +63,9 @@
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
+        window.currentUserEmail = null; // Menyimpan email untuk hak akses
+
+        // HANYA 1 onAuthStateChanged AGAR LEBIH STABIL
         onAuthStateChanged(auth, (user) => {
             const loginSection = document.getElementById('login-section');
             const mainAppSection = document.getElementById('main-app-section');
@@ -71,36 +74,15 @@
                 loginSection.classList.add('hidden');
                 mainAppSection.classList.remove('hidden');
                 document.getElementById('user-logged-email').innerText = user.email;
+                window.currentUserEmail = user.email;
                 
-                if (typeof initApp === 'function') {
-                    initApp();
-                }
+                if (typeof initApp === 'function') initApp();
             } else {
                 loginSection.classList.remove('hidden');
                 mainAppSection.classList.add('hidden');
+                window.currentUserEmail = null;
             }
         });
-        // Gabungkan inisialisasi agar lebih stabil
-onAuthStateChanged(auth, (user) => {
-    const loginSection = document.getElementById('login-section');
-    const mainAppSection = document.getElementById('main-app-section');
-
-    if (user) {
-        loginSection.classList.add('hidden');
-        mainAppSection.classList.remove('hidden');
-        document.getElementById('user-logged-email').innerText = user.email;
-        
-        // Logika Hak Akses
-        const adminEmail = "admin@wanasatria.com"; 
-        const isAdmin = (user.email === adminEmail);
-        
-        renderNavMenu(isAdmin); // Panggil fungsi render menu
-        if (typeof initApp === 'function') initApp();
-    } else {
-        loginSection.classList.remove('hidden'); // Pastikan ini tampil jika belum login
-        mainAppSection.classList.add('hidden');
-    }
-});
     </script>
 </head>
 <body class="bg-gray-100 font-sans antialiased text-gray-800">
@@ -170,7 +152,7 @@ onAuthStateChanged(auth, (user) => {
                 <button onclick="window.firebaseLogout()" class="w-full bg-slate-800 hover:bg-rose-950 text-slate-400 hover:text-rose-300 border border-slate-700/50 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
                     <i class="fa-solid fa-power-off"></i> Logout Akun
                 </button>
-                <button onclick="clearCurrentListData()" class="w-full bg-rose-950 hover:bg-rose-800 text-rose-300 hover:text-white border border-rose-800/50 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm">
+                <button id="btn-clear-data" onclick="clearCurrentListData()" class="w-full bg-rose-950 hover:bg-rose-800 text-rose-300 hover:text-white border border-rose-800/50 px-3 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition shadow-sm">
                     <i class="fa-solid fa-dumpster-fire"></i> <span id="clear-btn-text">Kosongkan List Ini</span>
                 </button>
                 <div class="text-[10px] text-slate-500 text-center tracking-wide pt-1">
@@ -184,7 +166,7 @@ onAuthStateChanged(auth, (user) => {
                 <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
                 
                 <div class="flex items-center gap-2">
-                    <button onclick="openDashboardModal()" class="text-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-3.5 py-1.5 rounded-full font-semibold shadow-sm transition flex items-center gap-2">
+                    <button id="btn-dashboard" onclick="openDashboardModal()" class="text-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-3.5 py-1.5 rounded-full font-semibold shadow-sm transition flex items-center gap-2">
                         <i class="fa-solid fa-chart-line"></i>
                         <span class="hidden sm:inline">Dashboard Statistik</span>
                     </button>
@@ -259,6 +241,7 @@ onAuthStateChanged(auth, (user) => {
         </div>
     </div>
 
+    <!-- MODAL DASHBOARD STATISTIK -->
     <div id="dashboard-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center px-6">
@@ -271,7 +254,7 @@ onAuthStateChanged(auth, (user) => {
             </header>
             
             <div class="p-6 bg-slate-50 overflow-y-auto max-h-[85vh] space-y-6">
-                
+                <!-- ISIAN DASHBOARD (Disembunyikan kodenya untuk keterbacaan, strukturnya sama dengan yang terakhir) -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
@@ -364,7 +347,6 @@ onAuthStateChanged(auth, (user) => {
                             <canvas id="chartWorkload"></canvas>
                         </div>
                     </div>
-                    
                     <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
                         <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-boxes-stacked text-cyan-600 mr-1"></i> Status Ketersediaan Unit Gudang</h4>
                         <div class="relative flex-1" style="min-height: 250px;">
@@ -392,8 +374,25 @@ onAuthStateChanged(auth, (user) => {
                     </div>
 
                     <div class="bg-white border rounded-xl shadow-sm p-4 flex flex-col">
-                        <h4 class="text-xs font-bold text-slate-700 mb-3 uppercase tracking-wide"><i class="fa-solid fa-store text-cyan-600 mr-1"></i> Detail Distribusi Aset Display (Etalase)</h4>
-                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[250px] pr-1">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b pb-2">
+                            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
+                                <i class="fa-solid fa-store text-cyan-600"></i> Detail Distribusi Aset Display (Etalase)
+                            </h4>
+                            <div class="flex items-center gap-1 text-[11px] flex-wrap justify-end">
+                                <select id="filter-display-cabang" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                    <option value="">Semua Cabang</option>
+                                    <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
+                                    <option value="Perintis">Perintis</option>
+                                </select>
+                                <input type="date" id="filter-display-start" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <span class="text-gray-400">s/d</span>
+                                <input type="date" id="filter-display-end" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <button onclick="resetDisplayFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded font-semibold transition" title="Reset Filter Semua Data">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 overflow-y-auto custom-table-scrollbar max-h-[210px] pr-1">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead class="bg-slate-50 text-slate-600 sticky top-0 font-bold border-b">
                                     <tr>
@@ -408,14 +407,11 @@ onAuthStateChanged(auth, (user) => {
                         </div>
                     </div>
                 </div>
-                
-                <p class="text-[11px] text-slate-400 text-center italic mt-2">
-                    <i class="fa-solid fa-sync animate-spin mr-1 text-cyan-500"></i> Seluruh metrik kalkulasi dan visualisasi grafik di atas terintegrasi otomatis secara penuh dengan cloud database Firebase Anda.
-                </p>
             </div>
         </div>
     </div>
 
+    <!-- MODAL EDIT DATA -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -725,6 +721,36 @@ onAuthStateChanged(auth, (user) => {
             laptop_display: ['Ready', 'Terjual', 'Gudang']
         };
 
+        // =======================================================
+        // FUNGSI UNTUK MENGATUR HAK AKSES BERDASARKAN EMAIL
+        // =======================================================
+        function applyRoleBasedAccess() {
+            const email = window.currentUserEmail;
+            
+            const btnServices = document.getElementById('btn-services');
+            const btnCctv = document.getElementById('btn-cctv');
+            const btnClear = document.getElementById('btn-clear-data');
+            const btnDashboard = document.getElementById('btn-dashboard');
+            
+            if (email === 'teknisi@wanasatria.com') {
+                // Sembunyikan fitur-fitur ini dari teknisi
+                if (btnServices) btnServices.style.display = 'none';
+                if (btnCctv) btnCctv.style.display = 'none';
+                if (btnClear) btnClear.style.display = 'none'; // Cegah hapus semua data
+                if (btnDashboard) btnDashboard.style.display = 'none'; // Sembunyikan Dashboard
+                
+                return 'list_laptop'; // Kembalikan List Laptop sebagai tab pertama
+            } else {
+                // Tampilkan semua untuk admin atau user lain
+                if (btnServices) btnServices.style.display = '';
+                if (btnCctv) btnCctv.style.display = '';
+                if (btnClear) btnClear.style.display = '';
+                if (btnDashboard) btnDashboard.style.display = '';
+                
+                return 'services'; // Kembalikan Log Services sebagai tab pertama
+            }
+        }
+
         window.openDashboardModal = function() {
             document.getElementById('dashboard-modal').classList.remove('hidden');
             calculateAndRenderStats();
@@ -734,12 +760,28 @@ onAuthStateChanged(auth, (user) => {
             document.getElementById('dashboard-modal').classList.add('hidden');
         }
 
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return new Date(dateStr); 
+        }
+
+        window.resetDisplayFilters = function() {
+            document.getElementById('filter-display-cabang').value = '';
+            document.getElementById('filter-display-start').value = '';
+            document.getElementById('filter-display-end').value = '';
+            calculateAndRenderStats();
+        }
+
         function calculateAndRenderStats() {
             const dataServices = globalDataCloud['services'] || [];
             const dataPenyewaan = globalDataCloud['penyewaan'] || [];
             const dataCctv = globalDataCloud['cctv'] || [];
             const dataLaptop = globalDataCloud['list_laptop'] || [];
-            const dataDisplay = globalDataCloud['laptop_display'] || [];
+            const dataDisplayRaw = globalDataCloud['laptop_display'] || [];
 
             let pendingServices = dataServices.filter(s => s.status === 'Antrean' || s.status === 'Proses').length;
             
@@ -754,10 +796,33 @@ onAuthStateChanged(auth, (user) => {
             let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
             let lapTerjual = dataLaptop.filter(l => l.status === 'Terjual').length;
 
-            let totalDisplay = dataDisplay.length;
-            let dispReady = dataDisplay.filter(d => d.status === 'Ready').length;
-            let dispSold = dataDisplay.filter(d => d.status === 'Terjual').length;
-            let dispOff = dataDisplay.filter(d => d.status === 'Gudang').length;
+            const branchVal = document.getElementById('filter-display-cabang').value;
+            const startVal = document.getElementById('filter-display-start').value;
+            const endVal = document.getElementById('filter-display-end').value;
+            
+            let filteredDisplay = dataDisplayRaw;
+
+            if (branchVal) {
+                filteredDisplay = filteredDisplay.filter(item => item.cabang === branchVal);
+            }
+
+            if (startVal && endVal) {
+                const startDate = new Date(startVal);
+                startDate.setHours(0,0,0,0);
+                const endDate = new Date(endVal);
+                endDate.setHours(23,59,59,999);
+
+                filteredDisplay = filteredDisplay.filter(item => {
+                    const itemDate = parseDate(item.tanggal);
+                    if (!itemDate) return false;
+                    return itemDate >= startDate && itemDate <= endDate;
+                });
+            }
+
+            let totalDisplay = filteredDisplay.length;
+            let dispReady = filteredDisplay.filter(d => d.status === 'Ready').length;
+            let dispSold = filteredDisplay.filter(d => d.status === 'Terjual').length;
+            let dispOff = filteredDisplay.filter(d => d.status === 'Gudang').length;
 
             document.getElementById('stat-services-pending').innerText = pendingServices;
             document.getElementById('stat-rent-omset').innerText = 'Rp ' + totalOmsetSewa.toLocaleString('id-ID');
@@ -774,7 +839,6 @@ onAuthStateChanged(auth, (user) => {
             document.getElementById('stat-display-sold').innerText = dispSold;
             document.getElementById('stat-display-off').innerText = dispOff;
 
-            // --- 1. Distribusi Model Laptop Gudang ---
             let modelCounts = {};
             dataLaptop.forEach(lap => {
                 let merkText = (lap.merk || '').trim();
@@ -804,9 +868,8 @@ onAuthStateChanged(auth, (user) => {
                 }
             }
 
-            // --- 2. Distribusi Model Laptop Display ---
             let displayModelCounts = {};
-            dataDisplay.forEach(disp => {
+            filteredDisplay.forEach(disp => {
                 let merkText = (disp.merk || '').trim();
                 let tipeText = (disp.tipe || '').trim();
                 let fullModelName = `${merkText} ${tipeText}`.trim();
@@ -820,7 +883,7 @@ onAuthStateChanged(auth, (user) => {
             if (displayModelsTbody) {
                 displayModelsTbody.innerHTML = '';
                 if(sortedDisplayModels.length === 0) {
-                    displayModelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Belum ada unit display di etalase</td></tr>`;
+                    displayModelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Tidak ada unit display pada kriteria filter ini</td></tr>`;
                 } else {
                     sortedDisplayModels.forEach(modelName => {
                         let totalUnitPerModel = displayModelCounts[modelName];
@@ -834,7 +897,6 @@ onAuthStateChanged(auth, (user) => {
                 }
             }
 
-            // --- 3. Chart Progres ---
             let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
             let sProses = dataServices.filter(s => s.status === 'Proses').length;
             let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
@@ -874,7 +936,6 @@ onAuthStateChanged(auth, (user) => {
                 }
             });
 
-            // --- 4. Chart Ketersediaan Laptop Gudang ---
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
@@ -904,7 +965,9 @@ onAuthStateChanged(auth, (user) => {
             const opsiHari = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('current-date').innerText = d.toLocaleDateString('id-ID', opsiHari);
 
-            switchTab('services');
+            // Menerapkan Hak Akses dan mendapatkan Tab awal yang sesuai
+            const defaultTab = applyRoleBasedAccess();
+            switchTab(defaultTab);
 
             const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display'];
             nodes.forEach(node => {
@@ -951,7 +1014,6 @@ onAuthStateChanged(auth, (user) => {
             document.getElementById('form-fields').innerHTML = fieldsTemplate[tabName];
             document.getElementById('search-bar').value = ''; 
 
-            // Auto-fill tanggal hari ini jika input type="date" name="tanggal" tersedia di form-fields
             const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
             if (dateInput) {
                 const today = new Date();
@@ -1267,7 +1329,6 @@ onAuthStateChanged(auth, (user) => {
             });
         }
 
-        // Helper untuk mengubah DD/MM/YYYY dari database ke YYYY-MM-DD agar masuk di input type="date"
         function formatDateForInput(dateStr) {
             if(!dateStr) return '';
             if(dateStr.includes('/')) {
@@ -1457,7 +1518,6 @@ onAuthStateChanged(auth, (user) => {
 
             const newDataItem = { id: nextId };
 
-            // Cek apakah ada input tanggal manual dari form, kalau ada ubah YYYY-MM-DD jadi DD/MM/YYYY
             let inputTgl = formData.get('tanggal');
             if (inputTgl && inputTgl.includes('-')) {
                 const parts = inputTgl.split('-');
@@ -1525,7 +1585,6 @@ onAuthStateChanged(auth, (user) => {
                 newDataItem.spek_singkat = `CPU: ${proc}\nRAM: ${ram}\nSSD/HDD: ${storage}\nVGA/Layar: ${vga} (${screen})`;
             } else {
                 for (let [key, value] of formData.entries()) {
-                    // Jangan timpa id atau tanggal yang sudah diset di atas
                     if(key !== 'id' && key !== 'tanggal') newDataItem[key] = value;
                 }
             }
@@ -1543,7 +1602,6 @@ onAuthStateChanged(auth, (user) => {
                     }
                     showToast();
                     e.target.reset();
-                    // Kembalikan input tanggal ke hari ini setelah di reset
                     const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
                     if (dateInput) {
                         const today = new Date();
