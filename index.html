@@ -188,12 +188,16 @@
                         </h3>
                         
                         <div class="flex items-center gap-2 ml-auto flex-wrap">
-                            <div id="import-excel-container" class="hidden">
-                                <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
-                                    <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
-                                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
-                                </label>
-                            </div>
+                            <div id="import-excel-container" class="hidden flex items-center gap-2">
+    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
+        <i class="fa-solid fa-file-export"></i> <span>Export Excel</span>
+    </button>
+
+    <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
+        <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
+        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
+    </label>
+</div>
                         </div>
                     </div>
                     
@@ -506,7 +510,7 @@
             services: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan</label>
-                    <input type="text" name="pelanggan" list="list-pelanggan" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="pelanggan" list="list-pelanggan" autocomplete="off" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Perangkat (Laptop/PC/dll)</label>
@@ -532,7 +536,7 @@
             penyewaan: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penyewa</label>
-                    <input type="text" name="penyewa" list="list-penyewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="penyewa" list="list-penyewa" autocomplete="off" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -568,7 +572,7 @@
             cctv: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Klien / Instansi</label>
-                    <input type="text" name="klien" list="list-klien" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="klien" list="list-klien" autocomplete="off" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi Pemasangan</label>
@@ -598,7 +602,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
-                    <input type="text" name="cabang" list="list-cabang" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="cabang" list="list-cabang" autocomplete="off" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko</label>
@@ -606,11 +610,11 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" list="list-merk" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="merk" list="list-merk" autocomplete="off" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" list="list-tipe" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" autocomplete="off" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (SN) Unit</label>
@@ -630,19 +634,19 @@
                     <span class="col-span-2 text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-microchip mr-1"></i> Detail Spesifikasi Unit</span>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Processor</label>
-                        <input type="text" name="spec_proc" list="list-proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_proc" list="list-proc" autocomplete="off" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Kapasitas RAM</label>
-                        <input type="text" name="spec_ram" list="list-ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_ram" list="list-ram" autocomplete="off" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Penyimpanan (Storage)</label>
-                        <input type="text" name="spec_storage" list="list-storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_storage" list="list-storage" autocomplete="off" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">VGA / Layar</label>
-                        <input type="text" name="spec_vga" list="list-vga" placeholder="Intel UHD / Nvidia GTX / 14 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_vga" list="list-vga" autocomplete="off" placeholder="Intel UHD / Nvidia GTX / 14 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Fitur Layar</label>
@@ -664,19 +668,19 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cabang Toko</label>
-                    <input type="text" name="cabang" list="list-cabang" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="cabang" list="list-cabang" autocomplete="off" placeholder="Pilih / ketik cabang baru..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Teknisi</label>
-                    <input type="text" name="teknisi" list="list-teknisi" placeholder="Pilih / ketik nama teknisi..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="teknisi" list="list-teknisi" autocomplete="off" placeholder="Pilih / ketik nama teknisi..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand / Merk Laptop</label>
-                    <input type="text" name="merk" list="list-merk" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="merk" list="list-merk" autocomplete="off" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" list="list-tipe" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" autocomplete="off" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Seri (SN) / Identitas</label>
@@ -698,19 +702,19 @@
                     <span class="col-span-2 text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-microchip mr-1"></i> Detail Spesifikasi Pajangan Toko</span>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Processor</label>
-                        <input type="text" name="spec_proc" list="list-proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_proc" list="list-proc" autocomplete="off" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Kapasitas RAM</label>
-                        <input type="text" name="spec_ram" list="list-ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_ram" list="list-ram" autocomplete="off" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Penyimpanan (Storage)</label>
-                        <input type="text" name="spec_storage" list="list-storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_storage" list="list-storage" autocomplete="off" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">VGA / Layar</label>
-                        <input type="text" name="spec_vga" list="list-vga" placeholder="Intel UHD / 13.3 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_vga" list="list-vga" autocomplete="off" placeholder="Intel UHD / 13.3 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Fitur Layar</label>
@@ -1068,10 +1072,11 @@
                 let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
                 let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((.*)\))?$/);
                 
-                if(mCPU && mCPU[1]) procs.add(mCPU[1].trim());
-                if(mRAM && mRAM[1]) rams.add(mRAM[1].trim());
-                if(mStor && mStor[1]) storages.add(mStor[1].trim());
-                if(mVGA && mVGA[1]) vgas.add(mVGA[1].trim());
+                // --- PERBAIKAN SPASI GANDA (.replace) & KAPITALISASI ---
+                if(mCPU && mCPU[1]) procs.add(mCPU[1].replace(/\s+/g, ' ').trim().toUpperCase());
+                if(mRAM && mRAM[1]) rams.add(mRAM[1].replace(/\s+/g, ' ').trim().toUpperCase());
+                if(mStor && mStor[1]) storages.add(mStor[1].replace(/\s+/g, ' ').trim().toUpperCase());
+                if(mVGA && mVGA[1]) vgas.add(mVGA[1].replace(/\s+/g, ' ').trim().toUpperCase());
             });
 
             allServices.forEach(s => { if(s.pelanggan) pelanggan.add(s.pelanggan.trim()); });
@@ -1235,7 +1240,7 @@
 
             const importBtn = document.getElementById('import-excel-container');
             if (importBtn) {
-                if (tabName === 'list_laptop') importBtn.classList.remove('hidden');
+                if (tabName === 'list_laptop' || tabName === 'laptop_display') importBtn.classList.remove('hidden');
                 else importBtn.classList.add('hidden');
             }
             
@@ -1867,6 +1872,33 @@
             toast.classList.remove('hidden');
             setTimeout(() => { toast.classList.add('hidden'); }, 3000);
         }
+        window.exportToExcel = function() {
+    const data = globalDataCloud[currentTab] || [];
+    if (data.length === 0) {
+        alert("Tidak ada data untuk diekspor!");
+        return;
+    }
+
+    // Menyiapkan data: Menghapus field internal Firebase agar rapi di Excel
+    const cleanData = data.map(item => {
+        const newItem = { ...item };
+        delete newItem._firebaseKey;
+        delete newItem._linkedLaptopKeys;
+        return newItem;
+    });
+
+    // Membuat worksheet dari JSON
+    const worksheet = XLSX.utils.json_to_sheet(cleanData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+
+    // Membuat nama file dinamis
+    const fileName = `Data_${currentTab}_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.xlsx`;
+
+    // Trigger download
+    XLSX.writeFile(workbook, fileName);
+};
+
     </script>
 </body>
 </html>
