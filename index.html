@@ -139,7 +139,7 @@
                         <i class="fa-solid fa-video w-6 text-center"></i> <span>Proyek CCTV</span>
                     </button>
                     <button id="btn-list_laptop" onclick="switchTab('list_laptop')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
-                        <i class="fa-solid fa-laptop w-6 text-center"></i> <span>List Laptop</span>
+                        <i class="fa-solid fa-laptop w-6 text-center"></i> <span>Laptop Penyewaan</span>
                     </button>
                     <button id="btn-laptop_display" onclick="switchTab('laptop_display')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-desktop w-6 text-center"></i> <span>Laptop Display</span>
@@ -1052,7 +1052,9 @@
                 listEl.innerHTML = '';
                 dataSet.forEach(val => {
                     if (val && val !== '-' && val.trim() !== '') {
-                        listEl.innerHTML += `<option value="${val}"></option>`;
+                        // PERBAIKAN: Konversi kutip dua (") menjadi &quot; agar HTML tidak terpotong
+                        const safeVal = val.replace(/"/g, '&quot;');
+                        listEl.innerHTML += `<option value="${safeVal}"></option>`;
                     }
                 });
             }
@@ -1070,13 +1072,13 @@
                 let mCPU = spekStr.match(/CPU:\s*(.*)/);
                 let mRAM = spekStr.match(/RAM:\s*(.*)/);
                 let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
-                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((.*)\))?$/);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\))?$/i);
                 
-                // --- PERBAIKAN SPASI GANDA (.replace) & KAPITALISASI ---
-                if(mCPU && mCPU[1]) procs.add(mCPU[1].replace(/\s+/g, ' ').trim().toUpperCase());
-                if(mRAM && mRAM[1]) rams.add(mRAM[1].replace(/\s+/g, ' ').trim().toUpperCase());
-                if(mStor && mStor[1]) storages.add(mStor[1].replace(/\s+/g, ' ').trim().toUpperCase());
-                if(mVGA && mVGA[1]) vgas.add(mVGA[1].replace(/\s+/g, ' ').trim().toUpperCase());
+                // --- PERBAIKAN SPASI GANDA (.replace) SAJA ---
+                if(mCPU && mCPU[1]) procs.add(mCPU[1].replace(/\s+/g, ' ').trim());
+                if(mRAM && mRAM[1]) rams.add(mRAM[1].replace(/\s+/g, ' ').trim());
+                if(mStor && mStor[1]) storages.add(mStor[1].replace(/\s+/g, ' ').trim());
+                if(mVGA && mVGA[1]) vgas.add(mVGA[1].replace(/\s+/g, ' ').trim());
             });
 
             allServices.forEach(s => { if(s.pelanggan) pelanggan.add(s.pelanggan.trim()); });
@@ -1116,7 +1118,7 @@
                 let mCPU = spekStr.match(/CPU:\s*(.*)/);
                 let mRAM = spekStr.match(/RAM:\s*(.*)/);
                 let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
-                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((.*)\))?$/);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\))?$/i);
                 
                 if(mCPU && form.querySelector('[name="spec_proc"]')) form.querySelector('[name="spec_proc"]').value = mCPU[1].trim();
                 if(mRAM && form.querySelector('[name="spec_ram"]')) form.querySelector('[name="spec_ram"]').value = mRAM[1].trim();
@@ -1284,9 +1286,9 @@
 
             const masterLaptop = globalDataCloud['list_laptop'] || [];
             if(masterLaptop.length === 0) {
-                container.innerHTML = `<span class="text-xs text-gray-400 italic">Tidak ada laptop di gudang (Isi di menu List Laptop)</span>`;
-                return;
-            }
+    container.innerHTML = `<span class="text-xs text-gray-400 italic">Tidak ada laptop di gudang (Isi di menu Laptop Penyewaan)</span>`;
+    return;
+}
 
             const searchInput = document.getElementById('search-form-laptop');
             const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
@@ -1365,35 +1367,61 @@
                         return;
                     }
 
-                    if (!confirm(`Ditemukan ${excelRows.length} baris laptop. Impor langsung ke cloud database?`)) return;
+                    // Tampilkan notifikasi konfirmasi sesuai dengan tab yang sedang aktif
+                    const tabNameStr = currentTab === 'laptop_display' ? 'Laptop Display' : 'Laptop Penyewaan';
+                    if (!confirm(`Ditemukan ${excelRows.length} baris data. Impor langsung ke cloud database pada list [${tabNameStr}]?`)) return;
 
-                    const targetNodeRef = window.dbRef(window.dbFirebase, 'list_laptop');
+                    // 1. Target database sekarang mengikuti currentTab (dinamis)
+                    const targetNodeRef = window.dbRef(window.dbFirebase, currentTab);
                     const d = new Date();
                     const tglInput = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-                    let currentMaxId = globalDataCloud['list_laptop'].length === 0 ? 0 : Math.max(...globalDataCloud['list_laptop'].map(l => Number(l.id) || 0));
+                    
+                    // 2. Max ID dihitung berdasarkan data di tab yang sedang aktif, sehingga angka bisa melanjutkan urutan sebelumnya
+                    const currentDataTab = globalDataCloud[currentTab] || [];
+                    let currentMaxId = currentDataTab.length === 0 ? 0 : Math.max(...currentDataTab.map(l => Number(l.id) || 0));
 
                     excelRows.forEach((row) => {
-                        currentMaxId++;
-                        let textSpek = row.spek || row.Spek || row.spesifikasi || '';
+                        currentMaxId++; // Nomor ID auto-increment menjadi angka
+                        
+                        let textSpek = row.spek || row.Spek || row.spesifikasi || row.spek_singkat || '';
                         if(!textSpek && (row.processor || row.ram || row.storage)) {
                             textSpek = `CPU: ${row.processor || '-'}\nRAM: ${row.ram || '-'}\nStorage: ${row.storage || '-'}\nVGA/Layar: ${row.vga || '-'} (Non-Touch)`;
                         }
 
-                        const newLaptopItem = {
-                            id: currentMaxId,
-                            tanggal: tglInput,
-                            cabang: row.cabang || 'Monumen Emmy Saelan',
-                            kode_toko: row.kode_toko || row.Kode_Toko || row.kode || '-',
-                            merk: row.merk || row.Merk || row.brand || '-',
-                            tipe: row.tipe || row.Tipe || row.model || '-',
-                            sn: String(row.sn || row.SN || row.serial || '-'),
-                            spek: textSpek || '-',
-                            status: row.status || row.Status || 'Tersedia',
-                            catatan: row.catatan || row.Catatan || ''
-                        };
+                        let newItemData = {};
+
+                        // 3. Mapping data disesuaikan dengan struktur field form masing-masing tab
+                        if (currentTab === 'list_laptop') {
+                            newItemData = {
+                                id: currentMaxId,
+                                tanggal: row.tanggal || tglInput,
+                                cabang: row.cabang || 'Monumen Emmy Saelan',
+                                kode_toko: row.kode_toko || row.Kode_Toko || row.kode || '-',
+                                merk: row.merk || row.Merk || row.brand || '-',
+                                tipe: row.tipe || row.Tipe || row.model || '-',
+                                sn: String(row.sn || row.SN || row.serial || '-'),
+                                spek: textSpek || '-',
+                                status: row.status || row.Status || 'Tersedia',
+                                catatan: row.catatan || row.Catatan || ''
+                            };
+                        } else if (currentTab === 'laptop_display') {
+                            newItemData = {
+                                id: currentMaxId,
+                                tanggal: row.tanggal || tglInput,
+                                cabang: row.cabang || 'Monumen Emmy Saelan',
+                                teknisi: row.teknisi || row.Teknisi || '-',
+                                merk: row.merk || row.Merk || row.brand || '-',
+                                tipe: row.tipe || row.Tipe || row.model || '-',
+                                sn: String(row.sn || row.SN || row.serial || '-'),
+                                spek_singkat: textSpek || '-',
+                                harga_jual: row.harga_jual || row.Harga_Jual || 0, // Tanpa awalan teks/Rp agar data bersih
+                                status: row.status || row.Status || 'Ready',
+                                catatan: row.catatan || row.Catatan || ''
+                            };
+                        }
 
                         const newPostPushRef = window.dbPush(targetNodeRef);
-                        window.dbSet(newPostPushRef, newLaptopItem);
+                        window.dbSet(newPostPushRef, newItemData);
                     });
 
                     showToast();
@@ -1478,9 +1506,9 @@
             const paginatedData = filteredData.slice(startIndex, endIndex);
 
             // Render baris sesuai dengan data yg dipaginasi
-            paginatedData.forEach((item) => {
-                let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
-                const keysOrder = dataKeysMapping[currentTab];
+            paginatedData.forEach((item, index) => {
+    let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
+    const keysOrder = dataKeysMapping[currentTab];
                 
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
