@@ -182,15 +182,18 @@
             <main class="p-6 max-w-5xl w-full mx-auto space-y-6">
                 
                 <div class="bg-white rounded-xl shadow-sm border p-6">
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100">
+                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 flex-wrap gap-3">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
                             <i class="fa-solid fa-pen-to-square text-cyan-600"></i> Form Input Data
                         </h3>
-                        <div id="import-excel-container" class="hidden">
-                            <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
-                                <i class="fa-solid fa-file-excel"></i> <span>Import dari Spreadsheet</span>
-                                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
-                            </label>
+                        
+                        <div class="flex items-center gap-2 ml-auto flex-wrap">
+                            <div id="import-excel-container" class="hidden">
+                                <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
+                                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -206,24 +209,33 @@
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border p-6 overflow-hidden">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                        <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
+                    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                        <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2 whitespace-nowrap">
                             <i class="fa-solid fa-list-check text-cyan-600"></i> Data Terinput (Cloud)
                         </h3>
-                        <div class="flex items-center gap-2 w-full sm:w-auto flex-1 sm:flex-none justify-end">
-                            <div class="relative w-full sm:w-48">
+                        <div class="flex items-center gap-2 w-full lg:w-auto flex-1 lg:flex-none justify-end flex-wrap">
+                            <div class="relative w-full sm:w-40">
                                 <i class="fa-solid fa-magnifying-glass absolute left-3 top-3.5 text-gray-400 text-sm"></i>
-                                <input type="text" id="search-bar" oninput="renderTable()" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                                <input type="text" id="search-bar" oninput="resetPaginationAndRender()" placeholder="Cari data..." class="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                             </div>
+                            
+                            <div class="w-full sm:w-44" id="branch-filter-container">
+                                <select id="branch-filter" onchange="resetPaginationAndRender()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium text-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                                    <option value="">Semua Cabang</option>
+                                    <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
+                                    <option value="Perintis">Perintis</option>
+                                </select>
+                            </div>
+
                             <div class="w-full sm:w-40">
-                                <select id="status-filter" onchange="renderTable()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium text-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                                <select id="status-filter" onchange="resetPaginationAndRender()" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white font-medium text-slate-600 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                                     <option value="">Semua Status</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <div class="overflow-x-auto border rounded-lg">
+                    <div class="overflow-x-auto border rounded-t-lg">
                         <table class="w-full text-left border-collapse">
                             <thead id="table-head" class="bg-slate-50 text-slate-600 text-sm font-semibold uppercase tracking-wider border-b">
                             </thead>
@@ -231,6 +243,14 @@
                                 <tr><td class="px-4 py-8 text-center text-gray-400">Menghubungkan ke server Firebase...</td></tr>
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <div id="pagination-controls" class="flex flex-col sm:flex-row justify-between items-center p-3 border border-t-0 bg-slate-50 rounded-b-lg hidden gap-3">
+                        <span id="pagination-info" class="text-xs font-semibold text-slate-500">Menampilkan 0 data</span>
+                        <div class="flex space-x-2">
+                            <button id="btn-prev-page" onclick="prevPage()" class="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition shadow-sm"><i class="fa-solid fa-chevron-left mr-1"></i> Prev</button>
+                            <button id="btn-next-page" onclick="nextPage()" class="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition shadow-sm">Next <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                        </div>
                     </div>
                 </div>
 
@@ -243,7 +263,6 @@
         </div>
     </div>
 
-    <!-- MODAL DASHBOARD STATISTIK -->
     <div id="dashboard-modal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-5xl w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center px-6">
@@ -423,7 +442,6 @@
         </div>
     </div>
 
-    <!-- MODAL EDIT DATA -->
     <div id="edit-modal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl shadow-xl border max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <header class="bg-slate-900 text-white p-4 flex justify-between items-center">
@@ -447,30 +465,7 @@
         </div>
     </div>
 
-    <!-- DAFTAR MASTER COMBO-BOX / DATALIST (Dapat ditambahkan manual saat pengetikan form) -->
-    <datalist id="list-cabang">
-        <option value="Monumen Emmy Saelan"></option>
-        <option value="Perintis"></option>
-    </datalist>
-    <datalist id="list-teknisi">
-        <option value="RESKY"></option>
-    </datalist>
-    <datalist id="list-merk">
-        <option value="Lenovo"></option>
-        <option value="ASUS"></option>
-        <option value="Acer"></option>
-        <option value="HP"></option>
-        <option value="Dell"></option>
-        <option value="MSI"></option>
-        <option value="Apple"></option>
-    </datalist>
-    <datalist id="list-tipe">
-        <option value="ThinkPad T490s"></option>
-        <option value="ThinkPad T480s"></option>
-        <option value="ThinkPad T460"></option>
-        <option value="ThinkPad L13 Yoga"></option>
-        <option value="IdeaPad 330S"></option>
-    </datalist>
+    <div id="datalist-container"></div>
 
     <script>
         let currentTab = 'services';
@@ -483,6 +478,10 @@
             laptop_display: [] 
         }; 
         
+        // State untuk Pagination
+        let currentPage = 1;
+        const itemsPerPage = 20;
+
         let chartWorkloadInstance = null;
         let chartLaptopStockInstance = null;
 
@@ -507,7 +506,7 @@
             services: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan</label>
-                    <input type="text" name="pelanggan" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="pelanggan" list="list-pelanggan" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Perangkat (Laptop/PC/dll)</label>
@@ -533,7 +532,7 @@
             penyewaan: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penyewa</label>
-                    <input type="text" name="penyewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="penyewa" list="list-penyewa" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
@@ -569,7 +568,7 @@
             cctv: `
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Klien / Instansi</label>
-                    <input type="text" name="klien" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="klien" list="list-klien" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Lokasi Pemasangan</label>
@@ -611,7 +610,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" list="list-tipe" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Serial Number (SN) Unit</label>
@@ -631,19 +630,19 @@
                     <span class="col-span-2 text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-microchip mr-1"></i> Detail Spesifikasi Unit</span>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Processor</label>
-                        <input type="text" name="spec_proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_proc" list="list-proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Kapasitas RAM</label>
-                        <input type="text" name="spec_ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_ram" list="list-ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Penyimpanan (Storage)</label>
-                        <input type="text" name="spec_storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_storage" list="list-storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">VGA / Layar</label>
-                        <input type="text" name="spec_vga" placeholder="Intel UHD / Nvidia GTX / 14 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_vga" list="list-vga" placeholder="Intel UHD / Nvidia GTX / 14 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Fitur Layar</label>
@@ -677,7 +676,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Tipe / Model Laptop</label>
-                    <input type="text" name="tipe" list="list-tipe" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    <input type="text" name="tipe" list="list-tipe" onchange="autoFillSpecsByTipe(event)" placeholder="Pilih / ketik manual..." required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nomor Seri (SN) / Identitas</label>
@@ -699,19 +698,19 @@
                     <span class="col-span-2 text-xs font-bold text-slate-500 uppercase tracking-wide"><i class="fa-solid fa-microchip mr-1"></i> Detail Spesifikasi Pajangan Toko</span>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Processor</label>
-                        <input type="text" name="spec_proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_proc" list="list-proc" placeholder="Core i5-8250U / Ryzen 5" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Kapasitas RAM</label>
-                        <input type="text" name="spec_ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_ram" list="list-ram" placeholder="8GB DDR4 / 16GB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Penyimpanan (Storage)</label>
-                        <input type="text" name="spec_storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_storage" list="list-storage" placeholder="SSD 256GB NVMe / HDD 1TB" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">VGA / Layar</label>
-                        <input type="text" name="spec_vga" placeholder="Intel UHD / 13.3 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
+                        <input type="text" name="spec_vga" list="list-vga" placeholder="Intel UHD / 13.3 Inch" required class="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cyan-500 focus:outline-none bg-white">
                     </div>
                     <div class="col-span-2">
                         <label class="block text-xs font-medium text-gray-600 mb-0.5">Fitur Layar</label>
@@ -995,7 +994,7 @@
             });
         }
 
-        // Fungsi khusus untuk memasukkan cabang manual ke dropdown dashboard
+        // Fungsi khusus untuk memasukkan cabang manual ke dropdown dashboard & tabel
         function updateDashboardBranchFilters() {
             let branches = new Set();
             branches.add("Monumen Emmy Saelan");
@@ -1006,23 +1005,123 @@
             
             const gudangSelect = document.getElementById('filter-gudang-cabang');
             const displaySelect = document.getElementById('filter-display-cabang');
+            const mainBranchSelect = document.getElementById('branch-filter');
             
-            if (!gudangSelect || !displaySelect) return;
-
-            let currentGudang = gudangSelect.value;
-            let currentDisplay = displaySelect.value;
-
             let optionsHtml = '<option value="">Semua Cabang</option>';
             [...branches].sort().forEach(b => {
                 optionsHtml += `<option value="${b}">${b}</option>`;
             });
 
-            gudangSelect.innerHTML = optionsHtml;
-            displaySelect.innerHTML = optionsHtml;
+            if (gudangSelect && displaySelect) {
+                let currentGudang = gudangSelect.value;
+                let currentDisplay = displaySelect.value;
+                gudangSelect.innerHTML = optionsHtml;
+                displaySelect.innerHTML = optionsHtml;
+                gudangSelect.value = currentGudang;
+                displaySelect.value = currentDisplay;
+            }
 
-            gudangSelect.value = currentGudang;
-            displaySelect.value = currentDisplay;
+            if(mainBranchSelect) {
+                let currentMainBranch = mainBranchSelect.value;
+                mainBranchSelect.innerHTML = optionsHtml;
+                mainBranchSelect.value = currentMainBranch;
+            }
         }
+
+        // ==========================================
+        // DYNAMIC DATALIST & CASCADING AUTOFILL
+        // ==========================================
+        function updateDynamicDatalists() {
+            const allLaptops = [...(globalDataCloud['list_laptop'] || []), ...(globalDataCloud['laptop_display'] || [])];
+            const allServices = globalDataCloud['services'] || [];
+            const allSewa = globalDataCloud['penyewaan'] || [];
+            const allCCTV = globalDataCloud['cctv'] || [];
+
+            function fillList(id, dataSet) {
+                let container = document.getElementById('datalist-container');
+                let listEl = document.getElementById(id);
+                if (!listEl) {
+                    listEl = document.createElement('datalist');
+                    listEl.id = id;
+                    container.appendChild(listEl);
+                }
+                listEl.innerHTML = '';
+                dataSet.forEach(val => {
+                    if (val && val !== '-' && val.trim() !== '') {
+                        listEl.innerHTML += `<option value="${val}"></option>`;
+                    }
+                });
+            }
+
+            const cabang = new Set(), teknisi = new Set(), merk = new Set(), tipe = new Set(), pelanggan = new Set(), penyewa = new Set(), klien = new Set();
+            const procs = new Set(), rams = new Set(), storages = new Set(), vgas = new Set();
+
+            allLaptops.forEach(lap => {
+                if(lap.cabang) cabang.add(lap.cabang.trim());
+                if(lap.teknisi) teknisi.add(lap.teknisi.trim());
+                if(lap.merk) merk.add(lap.merk.trim());
+                if(lap.tipe) tipe.add(lap.tipe.trim());
+                
+                let spekStr = lap.spek || lap.spek_singkat || '';
+                let mCPU = spekStr.match(/CPU:\s*(.*)/);
+                let mRAM = spekStr.match(/RAM:\s*(.*)/);
+                let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((.*)\))?$/);
+                
+                if(mCPU && mCPU[1]) procs.add(mCPU[1].trim());
+                if(mRAM && mRAM[1]) rams.add(mRAM[1].trim());
+                if(mStor && mStor[1]) storages.add(mStor[1].trim());
+                if(mVGA && mVGA[1]) vgas.add(mVGA[1].trim());
+            });
+
+            allServices.forEach(s => { if(s.pelanggan) pelanggan.add(s.pelanggan.trim()); });
+            allSewa.forEach(s => { if(s.penyewa) penyewa.add(s.penyewa.trim()); });
+            allCCTV.forEach(c => { if(c.klien) klien.add(c.klien.trim()); });
+
+            cabang.add("Monumen Emmy Saelan");
+            cabang.add("Perintis");
+
+            fillList('list-cabang', cabang);
+            fillList('list-teknisi', teknisi);
+            fillList('list-merk', merk);
+            fillList('list-tipe', tipe);
+            fillList('list-proc', procs);
+            fillList('list-ram', rams);
+            fillList('list-storage', storages);
+            fillList('list-vga', vgas);
+            fillList('list-pelanggan', pelanggan);
+            fillList('list-penyewa', penyewa);
+            fillList('list-klien', klien);
+        }
+
+        window.autoFillSpecsByTipe = function(event) {
+            const tipeValue = event.target.value;
+            if(!tipeValue) return;
+
+            const allLaptops = [...(globalDataCloud['list_laptop'] || []), ...(globalDataCloud['laptop_display'] || [])];
+            const found = allLaptops.find(lap => lap.tipe === tipeValue);
+            
+            if(found) {
+                const form = document.getElementById('operational-form');
+                
+                const merkInput = form.querySelector('[name="merk"]');
+                if(merkInput && !merkInput.value) merkInput.value = found.merk || '';
+                
+                let spekStr = found.spek || found.spek_singkat || '';
+                let mCPU = spekStr.match(/CPU:\s*(.*)/);
+                let mRAM = spekStr.match(/RAM:\s*(.*)/);
+                let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((.*)\))?$/);
+                
+                if(mCPU && form.querySelector('[name="spec_proc"]')) form.querySelector('[name="spec_proc"]').value = mCPU[1].trim();
+                if(mRAM && form.querySelector('[name="spec_ram"]')) form.querySelector('[name="spec_ram"]').value = mRAM[1].trim();
+                if(mStor && form.querySelector('[name="spec_storage"]')) form.querySelector('[name="spec_storage"]').value = mStor[1].trim();
+                if(mVGA) {
+                    if(form.querySelector('[name="spec_vga"]')) form.querySelector('[name="spec_vga"]').value = mVGA[1].trim();
+                    if(form.querySelector('[name="spec_screen"]') && mVGA[2]) form.querySelector('[name="spec_screen"]').value = mVGA[2].trim();
+                }
+            }
+        };
 
         function initApp() {
             const d = new Date();
@@ -1040,8 +1139,10 @@
                     const value = snapshot.val();
                     globalDataCloud[node] = value ? Object.keys(value).map(key => ({ _firebaseKey: key, ...value[key] })) : [];
                     
+                    updateDynamicDatalists(); // Sinkronisasi otomatis datalist dari Firebase
+
                     if (currentTab === node) {
-                        renderTable();
+                        resetPaginationAndRender();
                     }
                     if (node === 'list_laptop' || node === 'laptop_display') {
                         updateDashboardBranchFilters();
@@ -1055,6 +1156,26 @@
                 });
             });
         }
+
+        // ==========================================
+        // FITUR PAGINATION & RESET 
+        // ==========================================
+        window.resetPaginationAndRender = function() {
+            currentPage = 1;
+            renderTable();
+        };
+
+        window.nextPage = function() {
+            currentPage++;
+            renderTable();
+        };
+
+        window.prevPage = function() {
+            if(currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        };
 
         function switchTab(tabName) {
             currentTab = tabName;
@@ -1098,6 +1219,15 @@
                 });
             }
 
+            const branchContainer = document.getElementById('branch-filter-container');
+            if (branchContainer) {
+                if(tabName === 'list_laptop' || tabName === 'laptop_display') {
+                    branchContainer.style.display = 'block';
+                } else {
+                    branchContainer.style.display = 'none';
+                }
+            }
+
             const txtClearBtn = document.getElementById('clear-btn-text');
             if (txtClearBtn) {
                 txtClearBtn.innerText = btnClearLabels[tabName];
@@ -1121,7 +1251,7 @@
             });
 
             renderTableHeader();
-            renderTable();
+            resetPaginationAndRender(); 
 
             if(tabName === 'penyewaan') {
                 populateLaptopCheckboxes();
@@ -1304,26 +1434,46 @@
             if(!tbody) return;
 
             const data = globalDataCloud[currentTab] || [];
+            
             const searchQuery = document.getElementById('search-bar').value.toLowerCase();
             const filterStatusValue = document.getElementById('status-filter').value;
+            
+            let branchFilterValue = '';
+            const branchFilterEl = document.getElementById('branch-filter');
+            if(branchFilterEl && document.getElementById('branch-filter-container').style.display !== 'none') {
+                branchFilterValue = branchFilterEl.value;
+            }
+            
             tbody.innerHTML = '';
 
             const filteredData = data.filter(item => {
-                if (filterStatusValue && item.status !== filterStatusValue) {
-                    return false;
-                }
+                if (filterStatusValue && item.status !== filterStatusValue) return false;
+                if (branchFilterValue && item.cabang && item.cabang !== branchFilterValue) return false;
+                
                 return Object.values(item).some(val => {
                     if (typeof val === 'object') return false;
                     return String(val).toLowerCase().includes(searchQuery);
                 });
             });
 
-            if(filteredData.length === 0) {
+            const totalData = filteredData.length;
+
+            if(totalData === 0) {
                 tbody.innerHTML = `<tr><td colspan="${tableHeaders[currentTab].length}" class="px-4 py-8 text-center text-gray-400 bg-gray-50 font-medium"><i class="fa-solid fa-folder-open text-xl block mb-2"></i>Tidak ada data yang sesuai filter</td></tr>`;
+                document.getElementById('pagination-controls').classList.add('hidden');
                 return;
             }
 
-            filteredData.forEach((item) => {
+            // --- Logika PAGINATION (Slice array berdasarkan Slide / Page) ---
+            const totalPages = Math.ceil(totalData / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedData = filteredData.slice(startIndex, endIndex);
+
+            // Render baris sesuai dengan data yg dipaginasi
+            paginatedData.forEach((item) => {
                 let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
                 const keysOrder = dataKeysMapping[currentTab];
                 
@@ -1393,6 +1543,18 @@
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
+
+            // Set U/I Pagination Controls
+            const paginationControls = document.getElementById('pagination-controls');
+            if (totalData > itemsPerPage) {
+                paginationControls.classList.remove('hidden');
+                document.getElementById('pagination-info').innerText = `Menampilkan data ke-${startIndex + 1} s/d ${Math.min(endIndex, totalData)} (Total ${totalData} Data)`;
+                
+                document.getElementById('btn-prev-page').disabled = (currentPage === 1);
+                document.getElementById('btn-next-page').disabled = (currentPage === totalPages);
+            } else {
+                paginationControls.classList.add('hidden');
+            }
         }
 
         function formatDateForInput(dateStr) {
@@ -1668,6 +1830,7 @@
                     }
                     showToast();
                     e.target.reset();
+
                     const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
                     if (dateInput) {
                         const today = new Date();
