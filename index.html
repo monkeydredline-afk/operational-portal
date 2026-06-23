@@ -891,8 +891,10 @@
                 if(sortedModels.length === 0) {
                     modelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Tidak ada unit laptop pada cabang ini</td></tr>`;
                 } else {
+                    let totalGudangRow = 0;
                     sortedModels.forEach(modelName => {
                         let totalUnitPerModel = modelCounts[modelName];
+                        totalGudangRow += totalUnitPerModel;
                         modelsTbody.innerHTML += `
                             <tr class="hover:bg-slate-100 transition">
                                 <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
@@ -900,36 +902,88 @@
                             </tr>
                         `;
                     });
+                    
+                    // Render baris Total Keseluruhan Gudang
+                    modelsTbody.innerHTML += `
+                        <tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-200">
+                            <td class="px-2 py-2 text-right text-xs">TOTAL KESELURUHAN</td>
+                            <td class="px-2 py-2 text-right text-sm">${totalGudangRow}</td>
+                        </tr>
+                    `;
                 }
             }
 
-            // Logika Tabel Distribusi Display
-            let displayModelCounts = {};
+            // Logika Tabel Distribusi Display (Pisah per Status)
+            let displayCountsReady = {};
+            let displayCountsTerjual = {};
+            let displayCountsGudang = {};
+            
+            let totalReady = 0, totalTerjual = 0, totalGudang = 0;
+
             filteredDisplay.forEach(disp => {
                 let merkText = (disp.merk || '').trim();
                 let tipeText = (disp.tipe || '').trim();
                 let fullModelName = `${merkText} ${tipeText}`.trim();
-                
                 if(!fullModelName || fullModelName === "- -") fullModelName = "Model Tidak Diketahui";
-                displayModelCounts[fullModelName] = (displayModelCounts[fullModelName] || 0) + 1;
+                
+                let statusDisp = disp.status || 'Ready'; // status bawaan database
+
+                // Pilah masuk ke objek perhitungan masing-masing status
+                if(statusDisp === 'Ready') {
+                    displayCountsReady[fullModelName] = (displayCountsReady[fullModelName] || 0) + 1;
+                    totalReady++;
+                } else if(statusDisp === 'Terjual') {
+                    displayCountsTerjual[fullModelName] = (displayCountsTerjual[fullModelName] || 0) + 1;
+                    totalTerjual++;
+                } else if(statusDisp === 'Gudang') {
+                    displayCountsGudang[fullModelName] = (displayCountsGudang[fullModelName] || 0) + 1;
+                    totalGudang++;
+                }
             });
 
-            let sortedDisplayModels = Object.keys(displayModelCounts).sort();
+            // Fungsi bantuan pembuat baris tabel dan sub-judul per status
+            function renderDisplayGroup(title, dataObj, totalGroup, iconStr, textColor, bgColor) {
+                let keys = Object.keys(dataObj).sort();
+                if(keys.length === 0) return ''; // Jangan render kategori jika isinya kosong
+                
+                let html = `
+                    <tr class="${bgColor} border-y border-slate-200">
+                        <td colspan="2" class="px-2 py-1.5 font-bold ${textColor} text-[10px] uppercase tracking-wider">${iconStr} ${title} (Sub-Total: ${totalGroup})</td>
+                    </tr>
+                `;
+                keys.forEach(model => {
+                    html += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="px-2 py-1 font-medium text-slate-700 pl-4">▸ ${model}</td>
+                            <td class="px-2 py-1 text-right font-bold text-slate-900">${dataObj[model]}</td>
+                        </tr>
+                    `;
+                });
+                return html;
+            }
+
             const displayModelsTbody = document.getElementById('dashboard-display-models-tbody');
             if (displayModelsTbody) {
                 displayModelsTbody.innerHTML = '';
-                if(sortedDisplayModels.length === 0) {
+                if(filteredDisplay.length === 0) {
                     displayModelsTbody.innerHTML = `<tr><td colspan="2" class="px-2 py-3 text-center text-gray-400 italic">Tidak ada unit display pada kriteria filter ini</td></tr>`;
                 } else {
-                    sortedDisplayModels.forEach(modelName => {
-                        let totalUnitPerModel = displayModelCounts[modelName];
-                        displayModelsTbody.innerHTML += `
-                            <tr class="hover:bg-slate-100 transition">
-                                <td class="px-2 py-1.5 font-medium text-slate-700">${modelName}</td>
-                                <td class="px-2 py-1.5 text-right font-bold text-slate-900">${totalUnitPerModel}</td>
-                            </tr>
-                        `;
-                    });
+                    let finalHtml = '';
+                    
+                    // Memasukkan masing-masing kelompok ke dalam tabel
+                    finalHtml += renderDisplayGroup('Ready di Etalase', displayCountsReady, totalReady, '<i class="fa-solid fa-store"></i>', 'text-cyan-700', 'bg-cyan-50/50');
+                    finalHtml += renderDisplayGroup('Sudah Terjual', displayCountsTerjual, totalTerjual, '<i class="fa-solid fa-money-bill-wave"></i>', 'text-emerald-700', 'bg-emerald-50/50');
+                    finalHtml += renderDisplayGroup('Ditarik ke Gudang (Off)', displayCountsGudang, totalGudang, '<i class="fa-solid fa-arrow-rotate-left"></i>', 'text-amber-700', 'bg-amber-50/50');
+                    
+                    // Render baris Total Keseluruhan
+                    finalHtml += `
+                        <tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-200">
+                            <td class="px-2 py-2 text-right text-xs">TOTAL KESELURUHAN</td>
+                            <td class="px-2 py-2 text-right text-sm">${filteredDisplay.length}</td>
+                        </tr>
+                    `;
+                    
+                    displayModelsTbody.innerHTML = finalHtml;
                 }
             }
 
@@ -1069,10 +1123,11 @@
                 if(lap.tipe) tipe.add(lap.tipe.trim());
                 
                 let spekStr = lap.spek || lap.spek_singkat || '';
-                let mCPU = spekStr.match(/CPU:\s*(.*)/);
-                let mRAM = spekStr.match(/RAM:\s*(.*)/);
-                let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
-                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\))?$/i);
+                // Regex diperbarui agar berhenti saat bertemu Enter (\n) atau label spesifikasi berikutnya
+let mCPU = spekStr.match(/CPU:\s*(.*?)(?=\n|RAM:|SSD\/HDD:|VGA\/Layar:|$)/i);
+let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
+let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
+let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
                 
                 // --- PERBAIKAN SPASI GANDA (.replace) SAJA ---
                 if(mCPU && mCPU[1]) procs.add(mCPU[1].replace(/\s+/g, ' ').trim());
@@ -1115,10 +1170,10 @@
                 if(merkInput && !merkInput.value) merkInput.value = found.merk || '';
                 
                 let spekStr = found.spek || found.spek_singkat || '';
-                let mCPU = spekStr.match(/CPU:\s*(.*)/);
-                let mRAM = spekStr.match(/RAM:\s*(.*)/);
-                let mStor = spekStr.match(/SSD\/HDD:\s*(.*)/);
-                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\))?$/i);
+                let mCPU = spekStr.match(/CPU:\s*(.*?)(?=\n|RAM:|SSD\/HDD:|VGA\/Layar:|$)/i);
+let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
+let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
+let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
                 
                 if(mCPU && form.querySelector('[name="spec_proc"]')) form.querySelector('[name="spec_proc"]').value = mCPU[1].trim();
                 if(mRAM && form.querySelector('[name="spec_ram"]')) form.querySelector('[name="spec_ram"]').value = mRAM[1].trim();
