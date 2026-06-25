@@ -298,7 +298,7 @@
                     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Omset Unit Penyewaan</span>
-                            <span id="stat-rent-omset" class="text-xl font-black text-emerald-600 mt-1 block">Rp 0</span>
+                            <span id="stat-rent-omset" class="text-xl font-black text-emerald-600 mt-1 block">0</span>
                         </div>
                         <div class="bg-emerald-50 text-emerald-500 p-3 rounded-xl text-xl"><i class="fa-solid fa-sack-dollar"></i></div>
                     </div>
@@ -779,6 +779,11 @@
             const btnClear = document.getElementById('btn-clear-data');
             const btnDashboard = document.getElementById('btn-dashboard');
             
+            window.userBranch = ''; 
+            if (email === 'teknisiprintis@wanasatria.com') {
+                window.userBranch = 'Perintis';
+            }
+
             if (email === 'teknisi@wanasatria.com') {
                 if (btnServices) btnServices.style.display = 'none';
                 if (btnCctv) btnCctv.style.display = 'none';
@@ -839,7 +844,19 @@
             let lapRusak = dataLaptop.filter(l => l.status === 'Maintenance').length;
             let lapTerjual = dataLaptop.filter(l => l.status === 'Terjual').length;
 
-            const branchVal = document.getElementById('filter-display-cabang').value;
+            const filterDisplayCabang = document.getElementById('filter-display-cabang');
+            const filterGudangCabang = document.getElementById('filter-gudang-cabang');
+
+            // Hide filter for specific account
+            if (window.userBranch) {
+                if (filterDisplayCabang) filterDisplayCabang.style.display = 'none';
+                if (filterGudangCabang) filterGudangCabang.style.display = 'none';
+            } else {
+                if (filterDisplayCabang) filterDisplayCabang.style.display = '';
+                if (filterGudangCabang) filterGudangCabang.style.display = '';
+            }
+
+            const branchVal = window.userBranch || (filterDisplayCabang ? filterDisplayCabang.value : '');
             const startVal = document.getElementById('filter-display-start').value;
             const endVal = document.getElementById('filter-display-end').value;
             
@@ -868,7 +885,8 @@
             let dispOff = filteredDisplay.filter(d => d.status === 'Gudang').length;
 
             document.getElementById('stat-services-pending').innerText = pendingServices;
-            document.getElementById('stat-rent-omset').innerText = 'Rp ' + totalOmsetSewa.toLocaleString('id-ID');
+            // Disesuaikan agar simbol Rp dihilangkan dan lebih clean
+            document.getElementById('stat-rent-omset').innerText = totalOmsetSewa.toLocaleString('id-ID');
             document.getElementById('stat-cctv-active').innerText = activeCctv;
             
             document.getElementById('stat-laptop-total').innerText = totalLaptopAset;
@@ -882,8 +900,7 @@
             document.getElementById('stat-display-sold').innerText = dispSold;
             document.getElementById('stat-display-off').innerText = dispOff;
 
-            // Logika Tabel Distribusi Gudang
-            const gudangBranchVal = document.getElementById('filter-gudang-cabang').value;
+            const gudangBranchVal = window.userBranch || (filterGudangCabang ? filterGudangCabang.value : '');
             let filteredLaptopWarehouse = dataLaptop;
 
             if (gudangBranchVal) {
@@ -928,7 +945,6 @@
                 }
             }
 
-            // Logika Tabel Distribusi Display (Pisah per Status)
             let displayCountsReady = {};
             let displayCountsTerjual = {};
             let displayCountsGudang = {};
@@ -998,7 +1014,6 @@
                 }
             }
 
-            // Chart Progres
             let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
             let sProses = dataServices.filter(s => s.status === 'Proses').length;
             let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
@@ -1038,7 +1053,6 @@
                 }
             });
 
-            // Chart Ketersediaan Laptop Gudang
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
@@ -1281,6 +1295,15 @@
                 dateInput.value = `${yyyy}-${mm}-${dd}`;
             }
 
+            if (window.userBranch) {
+                const cabangInput = document.querySelector('#form-fields input[name="cabang"]');
+                if (cabangInput) {
+                    cabangInput.value = window.userBranch;
+                    cabangInput.readOnly = true;
+                    cabangInput.className = "w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none";
+                }
+            }
+
             const filterDropdown = document.getElementById('status-filter');
             if (filterDropdown) {
                 filterDropdown.innerHTML = '<option value="">Semua Status</option>';
@@ -1292,7 +1315,7 @@
 
             const branchContainer = document.getElementById('branch-filter-container');
             if (branchContainer) {
-                if(tabName === 'list_laptop' || tabName === 'laptop_display') {
+                if((tabName === 'list_laptop' || tabName === 'laptop_display') && !window.userBranch) {
                     branchContainer.style.display = 'block';
                 } else {
                     branchContainer.style.display = 'none';
@@ -1531,10 +1554,12 @@
             const searchQuery = document.getElementById('search-bar').value.toLowerCase();
             const filterStatusValue = document.getElementById('status-filter').value;
             
-            let branchFilterValue = '';
-            const branchFilterEl = document.getElementById('branch-filter');
-            if(branchFilterEl && document.getElementById('branch-filter-container').style.display !== 'none') {
-                branchFilterValue = branchFilterEl.value;
+            let branchFilterValue = window.userBranch || '';
+            if(!branchFilterValue) {
+                const branchFilterEl = document.getElementById('branch-filter');
+                if(branchFilterEl && document.getElementById('branch-filter-container').style.display !== 'none') {
+                    branchFilterValue = branchFilterEl.value;
+                }
             }
             
             tbody.innerHTML = '';
@@ -1571,8 +1596,9 @@
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
                     
+                    // Disesuaikan agar simbol Rp dihilangkan dan lebih clean
                     if ((key === 'biaya' || key === 'total_biaya' || key === 'harga_jual') && currentTab !== 'list_laptop') {
-                        rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">Rp ${Number(val).toLocaleString('id-ID')}</td>`;
+                        rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">${Number(val).toLocaleString('id-ID')}</td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         let displayVal = val;
@@ -1722,6 +1748,15 @@
                         <textarea id="edit-spek_singkat" rows="4" required class="w-full border p-2 text-sm rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.spek_singkat || ''}</textarea>
                     </div>
                 `;
+            }
+
+            if (window.userBranch) {
+                const editCabang = document.getElementById('edit-cabang');
+                if (editCabang) {
+                    editCabang.value = window.userBranch;
+                    editCabang.readOnly = true;
+                    editCabang.className = "w-full border p-2 text-sm rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed focus:outline-none";
+                }
             }
 
             document.getElementById('edit-modal').classList.remove('hidden');
