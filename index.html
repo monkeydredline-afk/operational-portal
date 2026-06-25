@@ -121,9 +121,11 @@
         </div>
     </div>
 
-    <div id="main-app-section" class="flex h-screen overflow-hidden hidden">
+    <div id="main-app-section" class="flex h-screen overflow-hidden hidden relative">
         
-        <div class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
+        <div id="mobile-overlay" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden backdrop-blur-sm transition-opacity" onclick="toggleMobileMenu()"></div>
+
+        <div id="sidebar" class="absolute md:static inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out w-64 bg-slate-900 text-white flex flex-col justify-between h-full shadow-2xl md:shadow-none">
             <div class="p-5 flex-1 overflow-y-auto">
                 <h1 class="text-xl font-bold tracking-wider text-cyan-400 mb-8">
                     <i class="fa-solid fa-screwdriver-wrench mr-2"></i>Teknisi Portal
@@ -163,9 +165,15 @@
             </div>
         </div>
 
-        <div class="flex-1 flex flex-col overflow-y-auto">
-            <header class="bg-white border-b p-4 flex justify-between items-center px-6 sticky top-0 z-10">
-                <h2 id="page-title" class="text-xl font-bold text-slate-800">Menghubungkan ke Cloud...</h2>
+        <div class="flex-1 flex flex-col h-screen overflow-y-auto bg-gray-100">
+
+            <header class="bg-white border-b p-4 flex justify-between items-center px-4 md:px-6 sticky top-0 z-10">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileMenu()" class="md:hidden text-slate-600 hover:text-cyan-600 focus:outline-none p-1 transition">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    <h2 id="page-title" class="text-lg md:text-xl font-bold text-slate-800 truncate max-w-[170px] sm:max-w-xs md:max-w-full">Menghubungkan ke Cloud...</h2>
+                </div>
                 
                 <div class="flex items-center gap-2">
                     <button id="btn-dashboard" onclick="openDashboardModal()" class="text-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-3.5 py-1.5 rounded-full font-semibold shadow-sm transition flex items-center gap-2">
@@ -182,22 +190,22 @@
             <main class="p-6 max-w-5xl w-full mx-auto space-y-6">
                 
                 <div class="bg-white rounded-xl shadow-sm border p-6">
-                    <div class="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 flex-wrap gap-3">
+                    <div class="flex navigator justify-between items-center mb-4 pb-3 border-b border-gray-100 flex-wrap gap-3">
                         <h3 class="text-lg font-semibold text-slate-700 flex items-center gap-2">
                             <i class="fa-solid fa-pen-to-square text-cyan-600"></i> Form Input Data
                         </h3>
                         
                         <div class="flex items-center gap-2 ml-auto flex-wrap">
                             <div id="import-excel-container" class="hidden flex items-center gap-2">
-    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
-        <i class="fa-solid fa-file-export"></i> <span>Export Excel</span>
-    </button>
+                                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-file-export"></i> <span>Export Excel</span>
+                                </button>
 
-    <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
-        <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
-        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
-    </label>
-</div>
+                                <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
+                                    <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
+                                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
+                                </label>
+                            </div>
                         </div>
                     </div>
                     
@@ -253,7 +261,7 @@
                         <span id="pagination-info" class="text-xs font-semibold text-slate-500">Menampilkan 0 data</span>
                         <div class="flex space-x-2">
                             <button id="btn-prev-page" onclick="prevPage()" class="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition shadow-sm"><i class="fa-solid fa-chevron-left mr-1"></i> Prev</button>
-                            <button id="btn-next-page" onclick="nextPage()" class="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition shadow-sm">Next <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                            <button id="btn-next-page" onclick="nextPage()" class="px-3 py-1.5 bg-white border border-slate-300 rounded text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50 transition shadow-sm">Next <i class="fa-solid fa-chevron-right mr-1"></i></button>
                         </div>
                     </div>
                 </div>
@@ -488,6 +496,14 @@
 
         let chartWorkloadInstance = null;
         let chartLaptopStockInstance = null;
+
+        // Fungsi untuk toggle Sidebar di Mobile
+        window.toggleMobileMenu = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        };
 
         function handleLoginSubmit(e) {
             e.preventDefault();
@@ -903,7 +919,6 @@
                         `;
                     });
                     
-                    // Render baris Total Keseluruhan Gudang
                     modelsTbody.innerHTML += `
                         <tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-200">
                             <td class="px-2 py-2 text-right text-xs">TOTAL KESELURUHAN</td>
@@ -926,9 +941,8 @@
                 let fullModelName = `${merkText} ${tipeText}`.trim();
                 if(!fullModelName || fullModelName === "- -") fullModelName = "Model Tidak Diketahui";
                 
-                let statusDisp = disp.status || 'Ready'; // status bawaan database
+                let statusDisp = disp.status || 'Ready';
 
-                // Pilah masuk ke objek perhitungan masing-masing status
                 if(statusDisp === 'Ready') {
                     displayCountsReady[fullModelName] = (displayCountsReady[fullModelName] || 0) + 1;
                     totalReady++;
@@ -941,10 +955,9 @@
                 }
             });
 
-            // Fungsi bantuan pembuat baris tabel dan sub-judul per status
             function renderDisplayGroup(title, dataObj, totalGroup, iconStr, textColor, bgColor) {
                 let keys = Object.keys(dataObj).sort();
-                if(keys.length === 0) return ''; // Jangan render kategori jika isinya kosong
+                if(keys.length === 0) return '';
                 
                 let html = `
                     <tr class="${bgColor} border-y border-slate-200">
@@ -970,12 +983,10 @@
                 } else {
                     let finalHtml = '';
                     
-                    // Memasukkan masing-masing kelompok ke dalam tabel
                     finalHtml += renderDisplayGroup('Ready di Etalase', displayCountsReady, totalReady, '<i class="fa-solid fa-store"></i>', 'text-cyan-700', 'bg-cyan-50/50');
                     finalHtml += renderDisplayGroup('Sudah Terjual', displayCountsTerjual, totalTerjual, '<i class="fa-solid fa-money-bill-wave"></i>', 'text-emerald-700', 'bg-emerald-50/50');
                     finalHtml += renderDisplayGroup('Ditarik ke Gudang (Off)', displayCountsGudang, totalGudang, '<i class="fa-solid fa-arrow-rotate-left"></i>', 'text-amber-700', 'bg-amber-50/50');
                     
-                    // Render baris Total Keseluruhan
                     finalHtml += `
                         <tr class="bg-slate-100 font-bold text-slate-800 border-t-2 border-slate-200">
                             <td class="px-2 py-2 text-right text-xs">TOTAL KESELURUHAN</td>
@@ -987,7 +998,7 @@
                 }
             }
 
-            // --- 3. Chart Progres ---
+            // Chart Progres
             let sAntrean = dataServices.filter(s => s.status === 'Antrean').length;
             let sProses = dataServices.filter(s => s.status === 'Proses').length;
             let sSelesai = dataServices.filter(s => s.status === 'Selesai').length;
@@ -1027,7 +1038,7 @@
                 }
             });
 
-            // --- 4. Chart Ketersediaan Laptop Gudang ---
+            // Chart Ketersediaan Laptop Gudang
             const ctxLaptop = document.getElementById('chartLaptopStock').getContext('2d');
             if (chartLaptopStockInstance !== null) chartLaptopStockInstance.destroy();
 
@@ -1052,7 +1063,6 @@
             });
         }
 
-        // Fungsi khusus untuk memasukkan cabang manual ke dropdown dashboard & tabel
         function updateDashboardBranchFilters() {
             let branches = new Set();
             branches.add("Monumen Emmy Saelan");
@@ -1086,9 +1096,7 @@
             }
         }
 
-        // ==========================================
-        // DYNAMIC DATALIST & CASCADING AUTOFILL
-        // ==========================================
+        // DYNAMIC DATALIST & AUTOFILL
         function updateDynamicDatalists() {
             const allLaptops = [...(globalDataCloud['list_laptop'] || []), ...(globalDataCloud['laptop_display'] || [])];
             const allServices = globalDataCloud['services'] || [];
@@ -1106,7 +1114,6 @@
                 listEl.innerHTML = '';
                 dataSet.forEach(val => {
                     if (val && val !== '-' && val.trim() !== '') {
-                        // PERBAIKAN: Konversi kutip dua (") menjadi &quot; agar HTML tidak terpotong
                         const safeVal = val.replace(/"/g, '&quot;');
                         listEl.innerHTML += `<option value="${safeVal}"></option>`;
                     }
@@ -1123,13 +1130,11 @@
                 if(lap.tipe) tipe.add(lap.tipe.trim());
                 
                 let spekStr = lap.spek || lap.spek_singkat || '';
-                // Regex diperbarui agar berhenti saat bertemu Enter (\n) atau label spesifikasi berikutnya
-let mCPU = spekStr.match(/CPU:\s*(.*?)(?=\n|RAM:|SSD\/HDD:|VGA\/Layar:|$)/i);
-let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
-let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
-let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
+                let mCPU = spekStr.match(/CPU:\s*(.*?)(?=\n|RAM:|SSD\/HDD:|VGA\/Layar:|$)/i);
+                let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
+                let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
                 
-                // --- PERBAIKAN SPASI GANDA (.replace) SAJA ---
                 if(mCPU && mCPU[1]) procs.add(mCPU[1].replace(/\s+/g, ' ').trim());
                 if(mRAM && mRAM[1]) rams.add(mRAM[1].replace(/\s+/g, ' ').trim());
                 if(mStor && mStor[1]) storages.add(mStor[1].replace(/\s+/g, ' ').trim());
@@ -1171,9 +1176,9 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                 
                 let spekStr = found.spek || found.spek_singkat || '';
                 let mCPU = spekStr.match(/CPU:\s*(.*?)(?=\n|RAM:|SSD\/HDD:|VGA\/Layar:|$)/i);
-let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
-let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
-let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
+                let mRAM = spekStr.match(/RAM:\s*(.*?)(?=\n|SSD\/HDD:|VGA\/Layar:|$)/i);
+                let mStor = spekStr.match(/SSD\/HDD:\s*(.*?)(?=\n|VGA\/Layar:|$)/i);
+                let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\n|$)/i);
                 
                 if(mCPU && form.querySelector('[name="spec_proc"]')) form.querySelector('[name="spec_proc"]').value = mCPU[1].trim();
                 if(mRAM && form.querySelector('[name="spec_ram"]')) form.querySelector('[name="spec_ram"]').value = mRAM[1].trim();
@@ -1201,7 +1206,7 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                     const value = snapshot.val();
                     globalDataCloud[node] = value ? Object.keys(value).map(key => ({ _firebaseKey: key, ...value[key] })) : [];
                     
-                    updateDynamicDatalists(); // Sinkronisasi otomatis datalist dari Firebase
+                    updateDynamicDatalists();
 
                     if (currentTab === node) {
                         resetPaginationAndRender();
@@ -1219,9 +1224,7 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
             });
         }
 
-        // ==========================================
-        // FITUR PAGINATION & RESET 
-        // ==========================================
+        // PAGINATION & RESET 
         window.resetPaginationAndRender = function() {
             currentPage = 1;
             renderTable();
@@ -1240,6 +1243,12 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
         };
 
         function switchTab(tabName) {
+            if (window.innerWidth < 768) {
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
+                    toggleMobileMenu();
+                }
+            }
             currentTab = tabName;
             selectedLaptopKeys = []; 
             
@@ -1341,9 +1350,9 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
 
             const masterLaptop = globalDataCloud['list_laptop'] || [];
             if(masterLaptop.length === 0) {
-    container.innerHTML = `<span class="text-xs text-gray-400 italic">Tidak ada laptop di gudang (Isi di menu Laptop Penyewaan)</span>`;
-    return;
-}
+                container.innerHTML = `<span class="text-xs text-gray-400 italic">Tidak ada laptop di gudang (Isi di menu Laptop Penyewaan)</span>`;
+                return;
+            }
 
             const searchInput = document.getElementById('search-form-laptop');
             const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
@@ -1422,21 +1431,18 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                         return;
                     }
 
-                    // Tampilkan notifikasi konfirmasi sesuai dengan tab yang sedang aktif
                     const tabNameStr = currentTab === 'laptop_display' ? 'Laptop Display' : 'Laptop Penyewaan';
                     if (!confirm(`Ditemukan ${excelRows.length} baris data. Impor langsung ke cloud database pada list [${tabNameStr}]?`)) return;
 
-                    // 1. Target database sekarang mengikuti currentTab (dinamis)
                     const targetNodeRef = window.dbRef(window.dbFirebase, currentTab);
                     const d = new Date();
                     const tglInput = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
                     
-                    // 2. Max ID dihitung berdasarkan data di tab yang sedang aktif, sehingga angka bisa melanjutkan urutan sebelumnya
                     const currentDataTab = globalDataCloud[currentTab] || [];
                     let currentMaxId = currentDataTab.length === 0 ? 0 : Math.max(...currentDataTab.map(l => Number(l.id) || 0));
 
                     excelRows.forEach((row) => {
-                        currentMaxId++; // Nomor ID auto-increment menjadi angka
+                        currentMaxId++;
                         
                         let textSpek = row.spek || row.Spek || row.spesifikasi || row.spek_singkat || '';
                         if(!textSpek && (row.processor || row.ram || row.storage)) {
@@ -1445,7 +1451,6 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
 
                         let newItemData = {};
 
-                        // 3. Mapping data disesuaikan dengan struktur field form masing-masing tab
                         if (currentTab === 'list_laptop') {
                             newItemData = {
                                 id: currentMaxId,
@@ -1469,7 +1474,7 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                                 tipe: row.tipe || row.Tipe || row.model || '-',
                                 sn: String(row.sn || row.SN || row.serial || '-'),
                                 spek_singkat: textSpek || '-',
-                                harga_jual: row.harga_jual || row.Harga_Jual || 0, // Tanpa awalan teks/Rp agar data bersih
+                                harga_jual: row.harga_jual || row.Harga_Jual || 0,
                                 status: row.status || row.Status || 'Ready',
                                 catatan: row.catatan || row.Catatan || ''
                             };
@@ -1552,7 +1557,6 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                 return;
             }
 
-            // --- Logika PAGINATION (Slice array berdasarkan Slide / Page) ---
             const totalPages = Math.ceil(totalData / itemsPerPage) || 1;
             if (currentPage > totalPages) currentPage = totalPages;
             
@@ -1560,11 +1564,10 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
             const endIndex = startIndex + itemsPerPage;
             const paginatedData = filteredData.slice(startIndex, endIndex);
 
-            // Render baris sesuai dengan data yg dipaginasi
             paginatedData.forEach((item, index) => {
-    let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
-    const keysOrder = dataKeysMapping[currentTab];
-                
+                let rowHtml = `<tr class="hover:bg-slate-50 transition border-b">`;
+                const keysOrder = dataKeysMapping[currentTab];
+                        
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
                     
@@ -1621,18 +1624,17 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
                 }
                 
                 rowHtml += `
-                    <button onclick="openEditModal('${item._firebaseKey}')" class="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-50 transition" title="Edit Data">
-                        <i class="fa-solid fa-pen-to-square text-base"></i>
-                    </button>
-                    <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </td>`;
+                        <button onclick="openEditModal('${item._firebaseKey}')" class="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-50 transition" title="Edit Data">
+                            <i class="fa-solid fa-pen-to-square text-base"></i>
+                        </button>
+                        <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </td>`;
                 rowHtml += `</tr>`;
                 tbody.innerHTML += rowHtml;
             });
 
-            // Set U/I Pagination Controls
             const paginationControls = document.getElementById('pagination-controls');
             if (totalData > itemsPerPage) {
                 paginationControls.classList.remove('hidden');
@@ -1955,33 +1957,28 @@ let mVGA = spekStr.match(/VGA\/Layar:\s*(.*?)(?:\s*\((Non-Touch|Touchscreen)\)|\
             toast.classList.remove('hidden');
             setTimeout(() => { toast.classList.add('hidden'); }, 3000);
         }
+        
         window.exportToExcel = function() {
-    const data = globalDataCloud[currentTab] || [];
-    if (data.length === 0) {
-        alert("Tidak ada data untuk diekspor!");
-        return;
-    }
+            const data = globalDataCloud[currentTab] || [];
+            if (data.length === 0) {
+                alert("Tidak ada data untuk diekspor!");
+                return;
+            }
 
-    // Menyiapkan data: Menghapus field internal Firebase agar rapi di Excel
-    const cleanData = data.map(item => {
-        const newItem = { ...item };
-        delete newItem._firebaseKey;
-        delete newItem._linkedLaptopKeys;
-        return newItem;
-    });
+            const cleanData = data.map(item => {
+                const newItem = { ...item };
+                delete newItem._firebaseKey;
+                delete newItem._linkedLaptopKeys;
+                return newItem;
+            });
 
-    // Membuat worksheet dari JSON
-    const worksheet = XLSX.utils.json_to_sheet(cleanData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+            const worksheet = XLSX.utils.json_to_sheet(cleanData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
 
-    // Membuat nama file dinamis
-    const fileName = `Data_${currentTab}_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.xlsx`;
-
-    // Trigger download
-    XLSX.writeFile(workbook, fileName);
-};
-
+            const fileName = `Data_${currentTab}_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        };
     </script>
 </body>
 </html>
