@@ -26,7 +26,6 @@
             background: #94a3b8;
             border-radius: 4px;
         }
-        /* Style agar datalist combo-box terlihat lebih natural */
         input::-webkit-calendar-picker-indicator {
             opacity: 0.6;
             cursor: pointer;
@@ -146,6 +145,9 @@
                     <button id="btn-laptop_display" onclick="switchTab('laptop_display')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-desktop w-6 text-center"></i> <span>Laptop Display</span>
                     </button>
+                    <button id="btn-list_office" onclick="switchTab('list_office')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-brands fa-microsoft w-6 text-center"></i> <span>List Akun Office</span>
+                    </button>
                 </nav>
             </div>
             
@@ -196,7 +198,7 @@
                         </h3>
                         
                         <div class="flex items-center gap-2 ml-auto flex-wrap">
-                            <div id="import-excel-container" class="hidden flex items-center gap-2">
+                            <div id="import-excel-container" class="flex items-center gap-2">
                                 <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
                                     <i class="fa-solid fa-file-export"></i> <span>Export Excel</span>
                                 </button>
@@ -430,7 +432,7 @@
                                 <input type="date" id="filter-display-start" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <span class="text-gray-400">s/d</span>
                                 <input type="date" id="filter-display-end" onchange="calculateAndRenderStats()" class="border rounded px-1.5 py-0.5 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                                <button onclick="resetDisplayFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded font-semibold transition" title="Reset Filter Semua Data">
+                                <button onclick="window.resetDisplayFilters()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-0.5 rounded font-semibold transition" title="Reset Filter Semua Data">
                                     <i class="fa-solid fa-arrows-rotate"></i>
                                 </button>
                             </div>
@@ -487,17 +489,16 @@
             penyewaan: [],
             cctv: [],
             list_laptop: [],
-            laptop_display: [] 
+            laptop_display: [],
+            list_office: []
         }; 
         
-        // State untuk Pagination
         let currentPage = 1;
         const itemsPerPage = 20;
 
         let chartWorkloadInstance = null;
         let chartLaptopStockInstance = null;
 
-        // Fungsi untuk toggle Sidebar di Mobile
         window.toggleMobileMenu = function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
@@ -744,6 +745,52 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Etalase</label>
                     <input type="text" name="catatan" placeholder="Contoh: Posisi Rak Atas Depan" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                 </div>
+            `,
+            list_office: `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Invite</label>
+                    <input type="date" name="tanggal" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama User</label>
+                    <input type="text" name="nama_user" placeholder="Nama Pelanggan / User" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Akun Gmail dan Office</label>
+                    <input type="email" name="akun" placeholder="contoh@gmail.com" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="text" name="password" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Info Pemulihan</label>
+                    <input type="text" name="pemulihan" placeholder="Nomor HP / Email Pemulihan" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Office</label>
+                    <input type="text" name="office" placeholder="M365 Family / Personal" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name (Device / Identitas)</label>
+                    <input type="text" name="name" placeholder="Nama PC / Perangkat" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Masa Aktif</label>
+                    <input type="text" name="masa_aktif" placeholder="Contoh: 1 Tahun / 25-12-2026" required class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status Lisensi</label>
+                    <select name="status" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <option value="Aktif">Aktif</option>
+                        <option value="Tidak Aktif">Tidak Aktif</option>
+                        <option value="Permanen">Permanen</option>
+                    </select>
+                </div>  
+                <div class="font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Link Redemption</label>
+                <a href="http://redeem.astrindo-starvision.com/" target="_blank"><i class="bx bx-file"></i> Redemption Office</a>
+                </div>
             `
         };
 
@@ -752,7 +799,8 @@
             penyewaan: ['ID', 'Tanggal', 'Penyewa', 'Unit & SN Laptop', 'Tgl Mulai', 'Tgl Selesai', 'Total Biaya', 'Status', 'Aksi'],
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
             list_laptop: ['ID', 'Tanggal Input', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
-            laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi']
+            laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi'],
+            list_office: ['ID', 'Tgl Invite', 'Nama User', 'Akun', 'Password', 'Pemulihan', 'Office', 'Name', 'Masa Aktif', 'Status', 'Aksi']
         };
 
         const dataKeysMapping = {
@@ -760,7 +808,8 @@
             penyewaan: ['id', 'tanggal', 'penyewa', 'unit', 'tgl_mulai', 'tgl_selesai', 'total_biaya', 'status'],
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
             list_laptop: ['id', 'tanggal', 'cabang', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status', 'catatan'],
-            laptop_display: ['id', 'tanggal', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan']
+            laptop_display: ['id', 'tanggal', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan'],
+            list_office: ['id', 'tanggal', 'nama_user', 'akun', 'password', 'pemulihan', 'office', 'name', 'masa_aktif', 'status']
         };
 
         const filterOptionsTemplate = {
@@ -768,7 +817,8 @@
             penyewaan: ['Belum Bayar', 'DP 50%', 'Lunas'],
             cctv: ['Survei', 'Pengerjaan', 'Selesai'],
             list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual', 'Staf'],
-            laptop_display: ['Ready', 'Terjual', 'Gudang']
+            laptop_display: ['Ready', 'Terjual', 'Gudang'],
+            list_office: ['Aktif', 'Tidak Aktif', 'Permanen']
         };
 
         function applyRoleBasedAccess() {
@@ -847,7 +897,6 @@
             const filterDisplayCabang = document.getElementById('filter-display-cabang');
             const filterGudangCabang = document.getElementById('filter-gudang-cabang');
 
-            // Hide filter for specific account
             if (window.userBranch) {
                 if (filterDisplayCabang) filterDisplayCabang.style.display = 'none';
                 if (filterGudangCabang) filterGudangCabang.style.display = 'none';
@@ -885,7 +934,6 @@
             let dispOff = filteredDisplay.filter(d => d.status === 'Gudang').length;
 
             document.getElementById('stat-services-pending').innerText = pendingServices;
-            // Disesuaikan agar simbol Rp dihilangkan dan lebih clean
             document.getElementById('stat-rent-omset').innerText = totalOmsetSewa.toLocaleString('id-ID');
             document.getElementById('stat-cctv-active').innerText = activeCctv;
             
@@ -1110,7 +1158,6 @@
             }
         }
 
-        // DYNAMIC DATALIST & AUTOFILL
         function updateDynamicDatalists() {
             const allLaptops = [...(globalDataCloud['list_laptop'] || []), ...(globalDataCloud['laptop_display'] || [])];
             const allServices = globalDataCloud['services'] || [];
@@ -1212,7 +1259,7 @@
             const defaultTab = applyRoleBasedAccess();
             switchTab(defaultTab);
 
-            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display'];
+            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office'];
             nodes.forEach(node => {
                 if (!window.dbFirebase) return;
                 const nodeRef = window.dbRef(window.dbFirebase, node);
@@ -1238,7 +1285,6 @@
             });
         }
 
-        // PAGINATION & RESET 
         window.resetPaginationAndRender = function() {
             currentPage = 1;
             renderTable();
@@ -1271,7 +1317,8 @@
                 penyewaan: "Input Data Penyewaan", 
                 cctv: "Input Proyek CCTV Pemasangan",
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)",
-                laptop_display: "Manajemen List Laptop Display (Etalase Toko)"
+                laptop_display: "Manajemen List Laptop Display (Etalase Toko)",
+                list_office: "Manajemen Akun dan Lisensi Office"
             };
 
             const btnClearLabels = {
@@ -1279,7 +1326,8 @@
                 penyewaan: "Kosongkan Data Penyewaan",
                 cctv: "Kosongkan Data CCTV",
                 list_laptop: "Kosongkan Master Laptop",
-                laptop_display: "Kosongkan List Laptop Display"
+                laptop_display: "Kosongkan List Laptop Display",
+                list_office: "Kosongkan Data Office"
             };
             
             document.getElementById('page-title').innerText = titles[tabName];
@@ -1326,14 +1374,13 @@
             if (txtClearBtn) {
                 txtClearBtn.innerText = btnClearLabels[tabName];
             }
-
+            
             const importBtn = document.getElementById('import-excel-container');
             if (importBtn) {
-                if (tabName === 'list_laptop' || tabName === 'laptop_display') importBtn.classList.remove('hidden');
-                else importBtn.classList.add('hidden');
+                importBtn.classList.remove('hidden');
             }
             
-            ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display'].forEach(tab => {
+            ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office'].forEach(tab => {
                 const btn = document.getElementById(`btn-${tab}`);
                 if(btn) {
                     if(tab === tabName) {
@@ -1411,7 +1458,7 @@
                                ${isDisabled ? 'disabled' : ''} 
                                ${isChecked}
                                onchange="syncCheckboxState(this)"
-                               class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 disabled:bg-gray-200">
+                               class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 focus:outline-none border-gray-300 disabled:bg-gray-200">
                         <div>
                             <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
                             <span class="text-xs font-mono bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded font-bold ml-1">${kdTokoText}</span>
@@ -1454,7 +1501,16 @@
                         return;
                     }
 
-                    const tabNameStr = currentTab === 'laptop_display' ? 'Laptop Display' : 'Laptop Penyewaan';
+                    const labelsMapping = {
+                        services: "Log Services",
+                        penyewaan: "Data Penyewaan",
+                        cctv: "Proyek CCTV",
+                        list_laptop: "Laptop Penyewaan (Master)",
+                        laptop_display: "Laptop Display (Etalase)",
+                        list_office: "List Akun Office"
+                    };
+
+                    const tabNameStr = labelsMapping[currentTab] || currentTab;
                     if (!confirm(`Ditemukan ${excelRows.length} baris data. Impor langsung ke cloud database pada list [${tabNameStr}]?`)) return;
 
                     const targetNodeRef = window.dbRef(window.dbFirebase, currentTab);
@@ -1467,40 +1523,79 @@
                     excelRows.forEach((row) => {
                         currentMaxId++;
                         
-                        let textSpek = row.spek || row.Spek || row.spesifikasi || row.spek_singkat || '';
-                        if(!textSpek && (row.processor || row.ram || row.storage)) {
-                            textSpek = `CPU: ${row.processor || '-'}\nRAM: ${row.ram || '-'}\nStorage: ${row.storage || '-'}\nVGA/Layar: ${row.vga || '-'} (Non-Touch)`;
-                        }
+                        const getVal = (possibleKeys, defaultVal = '-') => {
+                            for (let k of possibleKeys) {
+                                if (row[k] !== undefined) return row[k];
+                                const lowerK = k.toLowerCase();
+                                if (row[lowerK] !== undefined) return row[lowerK];
+                                const upperK = k.toUpperCase();
+                                if (row[upperK] !== undefined) return row[upperK];
+                            }
+                            return defaultVal;
+                        };
 
-                        let newItemData = {};
+                        let newItemData = {
+                            id: currentMaxId,
+                            tanggal: getVal(['tanggal', 'tanggal_input', 'tanggal_masuk', 'tgl', 'date'], tglInput)
+                        };
 
                         if (currentTab === 'list_laptop') {
-                            newItemData = {
-                                id: currentMaxId,
-                                tanggal: row.tanggal || tglInput,
-                                cabang: row.cabang || 'Monumen Emmy Saelan',
-                                kode_toko: row.kode_toko || row.Kode_Toko || row.kode || '-',
-                                merk: row.merk || row.Merk || row.brand || '-',
-                                tipe: row.tipe || row.Tipe || row.model || '-',
-                                sn: String(row.sn || row.SN || row.serial || '-'),
-                                spek: textSpek || '-',
-                                status: row.status || row.Status || 'Tersedia',
-                                catatan: row.catatan || row.Catatan || ''
-                            };
+                            let textSpek = getVal(['spek', 'spesifikasi', 'spek_teknik'], '');
+                            if(!textSpek && (row.processor || row.ram || row.storage)) {
+                                textSpek = `CPU: ${row.processor || '-'}\nRAM: ${row.ram || '-'}\nStorage: ${row.storage || '-'}\nVGA/Layar: ${row.vga || '-'} (Non-Touch)`;
+                            }
+                            newItemData.cabang = getVal(['cabang', 'cabang_toko'], 'Monumen Emmy Saelan');
+                            newItemData.kode_toko = getVal(['kode_toko', 'kode'], '-');
+                            newItemData.merk = getVal(['merk', 'brand'], '-');
+                            newItemData.tipe = getVal(['tipe', 'model'], '-');
+                            newItemData.sn = String(getVal(['sn', 'serial_number', 'serial'], '-'));
+                            newItemData.spek = textSpek || '-';
+                            newItemData.status = getVal(['status'], 'Tersedia');
+                            newItemData.catatan = getVal(['catatan', 'keterangan'], '');
+
                         } else if (currentTab === 'laptop_display') {
-                            newItemData = {
-                                id: currentMaxId,
-                                tanggal: row.tanggal || tglInput,
-                                cabang: row.cabang || 'Monumen Emmy Saelan',
-                                teknisi: row.teknisi || row.Teknisi || '-',
-                                merk: row.merk || row.Merk || row.brand || '-',
-                                tipe: row.tipe || row.Tipe || row.model || '-',
-                                sn: String(row.sn || row.SN || row.serial || '-'),
-                                spek_singkat: textSpek || '-',
-                                harga_jual: row.harga_jual || row.Harga_Jual || 0,
-                                status: row.status || row.Status || 'Ready',
-                                catatan: row.catatan || row.Catatan || ''
-                            };
+                            let textSpek = getVal(['spek_singkat', 'spek', 'spesifikasi'], '-');
+                            newItemData.cabang = getVal(['cabang', 'cabang_toko'], 'Monumen Emmy Saelan');
+                            newItemData.teknisi = getVal(['teknisi', 'nama_teknisi'], '-');
+                            newItemData.merk = getVal(['merk', 'brand'], '-');
+                            newItemData.tipe = getVal(['tipe', 'model', 'tipe_model'], '-');
+                            newItemData.sn = String(getVal(['sn', 'serial_number', 'serial'], '-'));
+                            newItemData.spek_singkat = textSpek;
+                            newItemData.harga_jual = getVal(['harga_jual', 'harga'], 0);
+                            newItemData.status = getVal(['status'], 'Ready');
+                            newItemData.catatan = getVal(['catatan', 'keterangan'], '');
+
+                        } else if (currentTab === 'services') {
+                            newItemData.pelanggan = getVal(['pelanggan', 'nama_pelanggan', 'nama'], '-');
+                            newItemData.perangkat = getVal(['perangkat', 'device', 'unit'], '-');
+                            newItemData.kerusakan = getVal(['kerusakan', 'gejala', 'keluhan'], '-');
+                            newItemData.biaya = getVal(['biaya', 'estimasi_biaya', 'harga'], 0);
+                            newItemData.status = getVal(['status'], 'Antrean');
+
+                        } else if (currentTab === 'penyewaan') {
+                            newItemData.penyewa = getVal(['penyewa', 'nama_penyewa', 'nama'], '-');
+                            newItemData.tgl_mulai = getVal(['tgl_mulai', 'mulai_sewa', 'tgl_sewa'], tglInput);
+                            newItemData.tgl_selesai = getVal(['tgl_selesai', 'selesai_sewa', 'tgl_kembali'], tglInput);
+                            newItemData.total_biaya = getVal(['total_biaya', 'biaya_sewa', 'harga'], 0);
+                            newItemData.status = getVal(['status', 'status_pembayaran'], 'Belum Bayar');
+                            newItemData.unit = getVal(['unit', 'unit_laptop', 'laptop'], '-');
+
+                        } else if (currentTab === 'cctv') {
+                            newItemData.klien = getVal(['klien', 'nama_klien', 'instansi'], '-');
+                            newItemData.lokasi = getVal(['lokasi', 'lokasi_pemasangan', 'alamat'], '-');
+                            newItemData.jumlah_cctv = getVal(['jumlah_cctv', 'jumlah', 'kamera'], 0);
+                            newItemData.progres = getVal(['progres', 'progres_kerja'], 'Penarikan Kabel');
+                            newItemData.status = getVal(['status', 'status_proyek'], 'Survei');
+
+                        } else if (currentTab === 'list_office') {
+                            newItemData.nama_user = getVal(['nama_user', 'user', 'nama'], '-');
+                            newItemData.akun = getVal(['akun', 'email', 'gmail'], '-');
+                            newItemData.password = getVal(['password', 'pass'], '-');
+                            newItemData.pemulihan = getVal(['pemulihan', 'info_pemulihan'], '-');
+                            newItemData.office = getVal(['office', 'jenis_office', 'lisensi'], '-');
+                            newItemData.name = getVal(['name', 'device', 'nama_pc'], '-');
+                            newItemData.masa_aktif = getVal(['masa_aktif', 'masa', 'expired', 'durasi'], '-');
+                            newItemData.status = getVal(['status', 'status_lisensi'], 'Aktif');
                         }
 
                         const newPostPushRef = window.dbPush(targetNodeRef);
@@ -1522,7 +1617,8 @@
                 penyewaan: "Data Penyewaan",
                 cctv: "Proyek CCTV",
                 list_laptop: "Master Data List Laptop",
-                laptop_display: "List Laptop Display"
+                laptop_display: "List Laptop Display",
+                list_office: "List Akun Office"
             };
 
             const targetName = listNames[currentTab];
@@ -1596,14 +1692,14 @@
                 keysOrder.forEach((key) => {
                     const val = item[key] !== undefined ? item[key] : '-';
                     
-                    // Disesuaikan agar simbol Rp dihilangkan dan lebih clean
                     if ((key === 'biaya' || key === 'total_biaya' || key === 'harga_jual') && currentTab !== 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">${Number(val).toLocaleString('id-ID')}</td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         let displayVal = val;
-                        if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia' || val === 'Ready') badgeColor = "bg-emerald-100 text-emerald-800";
-                        if (val === 'Belum Bayar' || val === 'Maintenance' || val === 'Gudang') badgeColor = "bg-rose-100 text-rose-800";
+                        if (val === 'Selesai' || val === 'Lunas' || val === 'Tersedia' || val === 'Ready' || val === 'Aktif') badgeColor = "bg-emerald-100 text-emerald-800";
+                        if (val === 'Permanen') badgeColor = "bg-cyan-100 text-cyan-800";
+                        if (val === 'Belum Bayar' || val === 'Maintenance' || val === 'Gudang' || val === 'Tidak Aktif') badgeColor = "bg-rose-100 text-rose-800";
                         if (val === 'Disewa') badgeColor = "bg-blue-100 text-blue-800";
                         if (val === 'Terjual') badgeColor = "bg-slate-200 text-slate-800";
                         if (val === 'Staf') { badgeColor = "bg-indigo-100 text-indigo-800"; displayVal = "Digunakan Staf"; }
@@ -1748,6 +1844,18 @@
                         <textarea id="edit-spek_singkat" rows="4" required class="w-full border p-2 text-sm rounded-lg font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">${targetItem.spek_singkat || ''}</textarea>
                     </div>
                 `;
+            } else if (currentTab === 'list_office') {
+                fieldsContainer.innerHTML = `
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Invite</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama User</label><input type="text" id="edit-nama_user" value="${targetItem.nama_user || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Akun Gmail & Office</label><input type="text" id="edit-akun" value="${targetItem.akun || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Password</label><input type="text" id="edit-password" value="${targetItem.password || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Pemulihan</label><input type="text" id="edit-pemulihan" value="${targetItem.pemulihan || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Lisensi Office</label><input type="text" id="edit-office" value="${targetItem.office || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Name (Device)</label><input type="text" id="edit-name" value="${targetItem.name || ''}" class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Masa Aktif</label><input type="text" id="edit-masa_aktif" value="${targetItem.masa_aktif || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aktif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
+                `;
             }
 
             if (window.userBranch) {
@@ -1831,6 +1939,20 @@
                         });
                     }
                 }
+            } else if (currentTab === 'list_office') {
+                let editTgl = document.getElementById('edit-tanggal').value;
+                if (editTgl && editTgl.includes('-')) {
+                    const parts = editTgl.split('-');
+                    updatedData.tanggal = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+                updatedData.nama_user = document.getElementById('edit-nama_user').value;
+                updatedData.akun = document.getElementById('edit-akun').value;
+                updatedData.password = document.getElementById('edit-password').value;
+                updatedData.pemulihan = document.getElementById('edit-pemulihan').value;
+                updatedData.office = document.getElementById('edit-office').value;
+                updatedData.name = document.getElementById('edit-name').value;
+                updatedData.masa_aktif = document.getElementById('edit-masa_aktif').value;
+                updatedData.status = document.getElementById('edit-status').value;
             }
 
             const targetItemRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
