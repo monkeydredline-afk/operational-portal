@@ -507,6 +507,7 @@
 
         let currentTab = 'services';
         let selectedLaptopKeys = []; 
+        window.editSelectedLaptopKeys = [];
         let globalDataCloud = {
             services: [],
             penyewaan: [],
@@ -1860,15 +1861,33 @@
                     </div>
                 `;
             } else if (currentTab === 'penyewaan') {
+                // Simpan key laptop lama ke variabel global
+                window.editSelectedLaptopKeys = targetItem._linkedLaptopKeys ? [...targetItem._linkedLaptopKeys] : [];
+
                 fieldsContainer.innerHTML = `
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Penyewa</label><input type="text" id="edit-penyewa" value="${targetItem.penyewa || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div class="grid grid-cols-2 gap-2">
                         <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Mulai</label><input type="date" id="edit-tgl_mulai" value="${targetItem.tgl_mulai || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                         <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Selesai</label><input type="date" id="edit-tgl_selesai" value="${targetItem.tgl_selesai || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     </div>
+                    
+                    <div class="md:col-span-2 space-y-1.5 border-t border-slate-200 pt-3 mt-1">
+                        <label class="block text-xs font-semibold text-slate-500">Edit Unit Laptop (Bisa Centang Banyak)</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                            <input type="text" id="search-edit-laptop" oninput="populateEditLaptopCheckboxes()" placeholder="Ketik Merk, Tipe, SN, atau Kode Toko..." class="w-full pl-8 pr-4 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-cyan-500 focus:outline-none bg-slate-50">
+                        </div>
+                        <div id="edit-checkbox-laptop-container" class="border border-gray-300 rounded-xl p-2 max-h-40 overflow-y-auto bg-white space-y-1.5 custom-table-scrollbar">
+                            <span class="text-xs text-gray-400 italic block py-2 text-center">Memuat list laptop...</span>
+                        </div>
+                    </div>
+
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Total Biaya (Rp)</label><input type="number" id="edit-total_biaya" value="${targetItem.total_biaya || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option><option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option><option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option></select></div>
                 `;
+                
+                // Panggil list checkbox laptop dengan delay kecil agar DOM siap
+                setTimeout(() => { if (typeof populateEditLaptopCheckboxes === 'function') populateEditLaptopCheckboxes(); }, 50);
             } else if (currentTab === 'laptop_display') { 
                 fieldsContainer.innerHTML = `
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Tanggal Masuk</label><input type="date" id="edit-tanggal" value="${formatDateForInput(targetItem.tanggal)}" required class="w-full border p-2 text-sm rounded-lg"></div>
@@ -1981,14 +2000,52 @@
                 updatedData.total_biaya = document.getElementById('edit-total_biaya').value;
                 updatedData.status = newStatus;
 
-                if (newStatus === 'Lunas') {
-                    const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
-                    if (sewaItem && sewaItem._linkedLaptopKeys) {
-                        sewaItem._linkedLaptopKeys.forEach(laptopKey => {
-                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${laptopKey}`);
-                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
-                        });
+                // 1. Validasi minimal 1 laptop terpilih
+                if (!window.editSelectedLaptopKeys || window.editSelectedLaptopKeys.length === 0) {
+                    alert("Silakan centang minimal 1 unit laptop!");
+                    return;
+                }
+
+                // 2. Buat string nama-nama laptop untuk tampilan UI
+                const masterLaptop = globalDataCloud['list_laptop'] || [];
+                let listUnitSewa = [];
+                window.editSelectedLaptopKeys.forEach(key => {
+                    const targetLap = masterLaptop.find(l => l._firebaseKey === key);
+                    if (targetLap) {
+                        listUnitSewa.push(`• ${targetLap.merk} ${targetLap.tipe} [SN: ${targetLap.sn || 'Tanpa SN'}]`);
                     }
+                });
+                updatedData.unit = listUnitSewa.join(', ');
+                updatedData._linkedLaptopKeys = window.editSelectedLaptopKeys;
+
+                // 3. Logika Perubahan Status Laptop (Lama vs Baru)
+                const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
+                const oldKeys = sewaItem && sewaItem._linkedLaptopKeys ? sewaItem._linkedLaptopKeys : [];
+                const newKeys = window.editSelectedLaptopKeys;
+
+                if (newStatus === 'Lunas' || newStatus === 'Selesai') {
+                    // Jika Lunas, semua unit (baik yang lama maupun yang baru dicentang) akan menjadi "Tersedia"
+                    const allKeys = new Set([...oldKeys, ...newKeys]);
+                    allKeys.forEach(key => {
+                        const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
+                        window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                    });
+                } else {
+                    // Jika laptop lama ada yang tidak dicentang lagi (dibatalkan), kembalikan ke "Tersedia"
+                    oldKeys.forEach(key => {
+                        if (!newKeys.includes(key)) {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
+                        }
+                    });
+                    
+                    // Jika ada laptop baru yang dicentang, ubah jadi "Disewa"
+                    newKeys.forEach(key => {
+                        if (!oldKeys.includes(key)) {
+                            const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
+                            window.dbUpdate(laptopStatusRef, { status: "Disewa" });
+                        }
+                    });
                 }
             } else if (currentTab === 'list_office') {
                 let editTgl = document.getElementById('edit-tanggal').value;
@@ -2156,6 +2213,72 @@
                 }
                 const targetRowRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
                 window.dbRemove(targetRowRef);
+            }
+        }
+
+        window.populateEditLaptopCheckboxes = function() {
+            const container = document.getElementById('edit-checkbox-laptop-container');
+            if(!container) return;
+
+            const masterLaptop = globalDataCloud['list_laptop'] || [];
+            const searchInput = document.getElementById('search-edit-laptop');
+            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            const filteredLaptop = masterLaptop.filter(lap => {
+                const brand = (lap.merk || '').toLowerCase();
+                const type = (lap.tipe || '').toLowerCase();
+                const sn = (lap.sn || '').toLowerCase();
+                const spec = (lap.spek || '').toLowerCase();
+                const kdtoko = (lap.kode_toko || '').toLowerCase();
+                return brand.includes(searchQuery) || type.includes(searchQuery) || sn.includes(searchQuery) || spec.includes(searchQuery) || kdtoko.includes(searchQuery);
+            });
+
+            if(filteredLaptop.length === 0) {
+                container.innerHTML = `<span class="text-xs text-gray-400 italic block py-2 text-center">Unit laptop tidak ditemukan.</span>`;
+                return;
+            }
+
+            let html = '';
+            filteredLaptop.forEach((lap) => {
+                const isMine = window.editSelectedLaptopKeys.includes(lap._firebaseKey);
+                const isDisabled = lap.status !== 'Tersedia' && !isMine;
+                const isChecked = isMine ? 'checked' : '';
+                
+                const snText = lap.sn ? lap.sn : 'Tanpa SN';
+                const kdTokoText = lap.kode_toko ? lap.kode_toko : '-';
+                const infoText = `${lap.merk} ${lap.tipe} [SN: ${snText}]`;
+                
+                html += `
+                    <label class="flex items-start space-x-3 p-1.5 hover:bg-slate-50 rounded-lg transition text-sm ${isDisabled ? 'text-gray-400 bg-gray-50' : 'cursor-pointer'}">
+                        <input type="checkbox" 
+                               value="${infoText}" 
+                               data-key="${lap._firebaseKey}" 
+                               ${isDisabled ? 'disabled' : ''} 
+                               ${isChecked}
+                               onchange="syncEditCheckboxState(this)"
+                               class="mt-1 rounded text-cyan-600 focus:ring-cyan-500 focus:outline-none border-gray-300 disabled:bg-gray-200">
+                        <div>
+                            <span class="font-semibold text-slate-800">${lap.merk} ${lap.tipe}</span> 
+                            <span class="text-[10px] font-mono bg-slate-100 text-slate-600 px-1 py-0.5 rounded font-bold ml-1">${kdTokoText}</span>
+                            <span class="block text-[10px] text-gray-500">SN: <span class="font-mono text-cyan-600 font-medium">${snText}</span></span>
+                            ${isDisabled ? `<span class="text-[10px] bg-rose-100 text-rose-800 px-1.5 py-0.2 rounded font-semibold mt-0.5 inline-block">${lap.status}</span>` : ''}
+                        </div>
+                    </label>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        window.syncEditCheckboxState = function(cb) {
+            const laptopKey = cb.getAttribute('data-key');
+            if (!window.editSelectedLaptopKeys) window.editSelectedLaptopKeys = [];
+            
+            if (cb.checked) {
+                if (!window.editSelectedLaptopKeys.includes(laptopKey)) {
+                    window.editSelectedLaptopKeys.push(laptopKey);
+                }
+            } else {
+                window.editSelectedLaptopKeys = window.editSelectedLaptopKeys.filter(key => key !== laptopKey);
             }
         }
 
