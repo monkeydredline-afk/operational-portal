@@ -82,7 +82,8 @@
             uid: null,
             email: null,
             role: null,
-            branch: null
+            branch: null,
+            permissions: {}
         };
 
         onAuthStateChanged(auth, async (user) => {
@@ -105,20 +106,55 @@
                         const profile = snapshot.val();
                         window.currentUser.role = profile.role || 'teknisi';
                         window.currentUser.branch = profile.branch || 'Head Office';
+                        
+                        // Gunakan permission dari database jika ada, atau mapping default jika lama
+                        if (profile.permissions) {
+                            window.currentUser.permissions = profile.permissions;
+                        } else {
+                            // Fallback mapping untuk database lama yang belum punya objek permissions
+                            if (profile.role === 'admin' || user.email === 'admin@wanasatria.com') {
+                                window.currentUser.permissions = {
+                                    dashboard: true, services: true, penyewaan: true, cctv: true,
+                                    list_laptop: true, laptop_display: true, list_office: true, user_management: true,
+                                    export_excel: true, import_excel: true, edit_data: true, delete_data: true
+                                };
+                            } else {
+                                window.currentUser.permissions = {
+                                    dashboard: false, services: false, penyewaan: false, cctv: false,
+                                    list_laptop: true, laptop_display: true, list_office: false, user_management: false,
+                                    export_excel: false, import_excel: false, edit_data: true, delete_data: false
+                                };
+                            }
+                        }
                     } else {
                         // Fallback default jika data belum terdaftar di node user_management
                         if (user.email === 'admin@wanasatria.com' || user.email === 'teknisiprintis@wanasatria.com') {
                             window.currentUser.role = 'admin';
                             window.currentUser.branch = user.email === 'teknisiprintis@wanasatria.com' ? 'Perintis' : 'Head Office';
+                            window.currentUser.permissions = {
+                                dashboard: true, services: true, penyewaan: true, cctv: true,
+                                list_laptop: true, laptop_display: true, list_office: true, user_management: true,
+                                export_excel: true, import_excel: true, edit_data: true, delete_data: true
+                            };
                         } else {
                             window.currentUser.role = 'teknisi';
                             window.currentUser.branch = 'Head Office';
+                            window.currentUser.permissions = {
+                                dashboard: false, services: false, penyewaan: false, cctv: false,
+                                list_laptop: true, laptop_display: true, list_office: false, user_management: false,
+                                export_excel: false, import_excel: false, edit_data: true, delete_data: false
+                            };
                         }
                     }
                 } catch (err) {
                     console.error("Gagal sinkronisasi data peran:", err);
                     window.currentUser.role = 'teknisi';
                     window.currentUser.branch = 'Head Office';
+                    window.currentUser.permissions = {
+                        dashboard: false, services: false, penyewaan: false, cctv: false,
+                        list_laptop: true, laptop_display: true, list_office: false, user_management: false,
+                        export_excel: false, import_excel: false, edit_data: true, delete_data: false
+                    };
                 }
                 
                 if (typeof initApp === 'function') initApp();
@@ -129,7 +165,8 @@
                     uid: null,
                     email: null,
                     role: null,
-                    branch: null
+                    branch: null,
+                    permissions: {}
                 };
             }
         });
@@ -256,11 +293,11 @@
                         
                         <div class="flex items-center gap-2 ml-auto flex-wrap">
                             <div id="import-excel-container" class="flex items-center gap-2">
-                                <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
+                                <button id="btn-export-excel" onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2">
                                     <i class="fa-solid fa-file-export"></i> <span>Export Excel</span>
                                 </button>
 
-                                <label class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
+                                <label id="btn-import-excel" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition text-sm flex items-center gap-2 cursor-pointer">
                                     <i class="fa-solid fa-file-excel"></i> <span>Import Excel</span>
                                     <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" onchange="importSpreadsheet(event)" class="hidden">
                                 </label>
@@ -896,19 +933,65 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Role / Hak Akses</label>
-                    <select id="user-role" name="role" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="admin">Admin (Akses Penuh)</option>
-                        <option value="teknisi">Teknisi (Terbatas)</option>
-                    </select>
-                </div>
-                <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Wilayah Cabang (Branch)</label>
                     <select id="user-branch" name="branch" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                         <option value="Head Office">Head Office (Semua)</option>
                         <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
                         <option value="Perintis">Perintis</option>
                     </select>
+                </div>
+                <div class="md:col-span-2 border-t pt-3 mt-2">
+                    <span class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"><i class="fa-solid fa-key mr-1"></i> Hak Akses Menu & Aksi</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_dashboard" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Dashboard</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_services" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Log Service</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_penyewaan" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Penyewaan</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_cctv" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>CCTV</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_list_laptop" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Laptop Gudang</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_laptop_display" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Laptop Display</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_list_office" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>List Office</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_user_management" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>User Management</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_export_excel" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Export Excel</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_import_excel" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Import Excel</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_edit_data" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Edit Data</span>
+                        </label>
+                        <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                            <input type="checkbox" name="perm_delete_data" value="true" class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                            <span>Hapus Data</span>
+                        </label>
+                    </div>
                 </div>
             `
         };
@@ -920,7 +1003,7 @@
             list_laptop: ['ID', 'Tanggal Input', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
             laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi'],
             list_office: ['ID', 'Tgl Invite', 'Nama User', 'Akun', 'Password', 'Pemulihan', 'Office', 'Name', 'Masa Aktif', 'Status', 'Aksi'],
-            user_management: ['ID', 'Nama Lengkap', 'Email Akun', 'Sandi Terdaftar', 'Role Akses', 'Cabang / Branch', 'Aksi']
+            user_management: ['ID', 'Nama Lengkap', 'Email Akun', 'Sandi Terdaftar', 'Hak Akses Menu', 'Cabang / Branch', 'Aksi']
         };
 
         const dataKeysMapping = {
@@ -930,7 +1013,7 @@
             list_laptop: ['id', 'tanggal', 'cabang', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status', 'catatan'],
             laptop_display: ['id', 'tanggal', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan'],
             list_office: ['id', 'tanggal', 'nama_user', 'akun', 'password', 'pemulihan', 'office', 'name', 'masa_aktif', 'status'],
-            user_management: ['id', 'name', 'email', 'password', 'role', 'branch']
+            user_management: ['id', 'name', 'email', 'password', 'permissions', 'branch']
         };
 
         const filterOptionsTemplate = {
@@ -940,46 +1023,55 @@
             list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual', 'Staf'],
             laptop_display: ['Ready', 'Terjual', 'Gudang'],
             list_office: ['Aktif', 'Tidak Aktif', 'Permanen'],
-            user_management: ['admin', 'teknisi']
+            user_management: ['Head Office', 'Monumen Emmy Saelan', 'Perintis']
         };
 
         function applyRoleBasedAccess() {
-            const role = window.currentUser.role || 'teknisi';
+            const perms = window.currentUser.permissions || {};
             const branch = window.currentUser.branch || 'Head Office';
             
+            const btnDashboard = document.getElementById('btn-dashboard');
             const btnServices = document.getElementById('btn-services');
             const btnPenyewaan = document.getElementById('btn-penyewaan');
             const btnCctv = document.getElementById('btn-cctv');
-            const btnClear = document.getElementById('btn-clear-data');
-            const btnDashboard = document.getElementById('btn-dashboard');
-            const btnUserManagement = document.getElementById('btn-user_management');
+            const btnListLaptop = document.getElementById('btn-list_laptop');
+            const btnLaptopDisplay = document.getElementById('btn-laptop_display');
             const btnListOffice = document.getElementById('btn-list_office');
+            const btnUserManagement = document.getElementById('btn-user_management');
+            const btnClear = document.getElementById('btn-clear-data');
             
             window.userBranch = ''; 
             if (branch && branch !== 'Head Office') {
                 window.userBranch = branch;
             }
 
-            if (role === 'teknisi') {
-                if (btnServices) btnServices.style.display = 'none';
-                if (btnCctv) btnCctv.style.display = 'none';
-                if (btnClear) btnClear.style.display = 'none'; 
-                if (btnDashboard) btnDashboard.style.display = 'none'; 
-                if (btnUserManagement) btnUserManagement.style.display = 'none';
-                if (btnListOffice) btnListOffice.style.display = 'none';
-                return 'list_laptop'; 
-            } else {
-                if (btnServices) btnServices.style.display = '';
-                if (btnCctv) btnCctv.style.display = '';
-                if (btnClear) btnClear.style.display = '';
-                if (btnDashboard) btnDashboard.style.display = '';
-                if (btnUserManagement) btnUserManagement.style.display = '';
-                if (btnListOffice) btnListOffice.style.display = '';
-                return 'services'; 
+            // Tampilkan atau Sembunyikan elemen dashboard & sidebar secara dinamis
+            if (btnDashboard) btnDashboard.style.display = perms.dashboard ? '' : 'none';
+            if (btnServices) btnServices.style.display = perms.services ? '' : 'none';
+            if (btnPenyewaan) btnPenyewaan.style.display = perms.penyewaan ? '' : 'none';
+            if (btnCctv) btnCctv.style.display = perms.cctv ? '' : 'none';
+            if (btnListLaptop) btnListLaptop.style.display = perms.list_laptop ? '' : 'none';
+            if (btnLaptopDisplay) btnLaptopDisplay.style.display = perms.laptop_display ? '' : 'none';
+            if (btnListOffice) btnListOffice.style.display = perms.list_office ? '' : 'none';
+            if (btnUserManagement) btnUserManagement.style.display = perms.user_management ? '' : 'none';
+            if (btnClear) btnClear.style.display = perms.delete_data ? '' : 'none';
+
+            // Menentukan tab awal yang terbuka berdasarkan izin yang dicentang
+            const tabsOrder = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office', 'user_management'];
+            for (let t of tabsOrder) {
+                if (perms[t]) {
+                    return t;
+                }
             }
+            return 'list_laptop'; 
         }
 
         window.openDashboardModal = function() {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.dashboard) {
+                alert("Anda tidak memiliki izin akses untuk melihat Dashboard Statistik.");
+                return;
+            }
             document.getElementById('dashboard-modal').classList.remove('hidden');
             calculateAndRenderStats();
         }
@@ -1433,6 +1525,21 @@
         };
 
         function switchTab(tabName) {
+            // Cek izin akses menu terlebih dahulu
+            const perms = window.currentUser.permissions || {};
+            if (tabName !== 'login' && !perms[tabName]) {
+                const tabsOrder = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office', 'user_management'];
+                let foundTab = false;
+                for (let t of tabsOrder) {
+                    if (perms[t]) {
+                        switchTab(t);
+                        foundTab = true;
+                        break;
+                    }
+                }
+                if (!foundTab) return; // Mencegah loop jika tidak ada izin sama sekali
+            }
+
             if (window.innerWidth < 768) {
                 const sidebar = document.getElementById('sidebar');
                 if (sidebar && !sidebar.classList.contains('-translate-x-full')) {
@@ -1507,10 +1614,10 @@
                 txtClearBtn.innerText = btnClearLabels[tabName];
             }
             
-            const importBtn = document.getElementById('import-excel-container');
-            if (importBtn) {
-                importBtn.classList.remove('hidden');
-            }
+            const btnExport = document.getElementById('btn-export-excel');
+            const btnImport = document.getElementById('btn-import-excel');
+            if (btnExport) btnExport.style.display = perms.export_excel ? '' : 'none';
+            if (btnImport) btnImport.style.display = perms.import_excel ? '' : 'none';
             
             ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office','user_management'].forEach(tab => {
                 const btn = document.getElementById(`btn-${tab}`);
@@ -1616,6 +1723,13 @@
         }
 
         window.importSpreadsheet = function(e) {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.import_excel) {
+                alert("Anda tidak memiliki hak akses untuk mengimpor data spreadsheet.");
+                e.target.value = '';
+                return;
+            }
+
             const file = e.target.files[0];
             if (!file) return;
 
@@ -1734,8 +1848,12 @@
                             newItemData.name = getVal(['name', 'nama', 'nama_lengkap'], '-');
                             newItemData.email = getVal(['email', 'surel'], '-');
                             newItemData.password = getVal(['password', 'sandi'], '-');
-                            newItemData.role = getVal(['role', 'jabatan'], 'teknisi');
                             newItemData.branch = getVal(['branch', 'cabang'], 'Head Office');
+                            newItemData.permissions = {
+                                dashboard: true, services: false, penyewaan: false, cctv: false,
+                                list_laptop: true, laptop_display: true, list_office: false, user_management: false,
+                                export_excel: false, import_excel: false, edit_data: true, delete_data: false
+                            };
                         }
 
                         const newPostPushRef = window.dbPush(targetNodeRef);
@@ -1752,6 +1870,12 @@
         }
 
         window.clearCurrentListData = function() {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.delete_data) {
+                alert("Anda tidak memiliki hak akses untuk mengosongkan/menghapus data.");
+                return;
+            }
+
             const listNames = {
                 services: "Log Services",
                 penyewaan: "Data Penyewaan",
@@ -1835,10 +1959,33 @@
                     
                     if ((key === 'biaya' || key === 'total_biaya' || key === 'harga_jual') && currentTab !== 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">${Number(val).toLocaleString('id-ID')}</td>`;
-                    } else if (key === 'role' && currentTab === 'user_management') {
-                        let roleBadgeColor = val === 'admin' ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-800';
-                        let displayRole = val === 'admin' ? 'Admin' : 'Teknisi';
-                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${roleBadgeColor}">${displayRole}</span></td>`;
+                    } else if (key === 'permissions' && currentTab === 'user_management') {
+                        // Tampilkan ringkasan hak akses sebagai badge kecil
+                        const perms = val || {};
+                        let badges = [];
+                        if (perms.dashboard) badges.push('Dashboard');
+                        if (perms.services) badges.push('Services');
+                        if (perms.penyewaan) badges.push('Sewa');
+                        if (perms.cctv) badges.push('CCTV');
+                        if (perms.list_laptop) badges.push('Gudang');
+                        if (perms.laptop_display) badges.push('Display');
+                        if (perms.list_office) badges.push('Office');
+                        if (perms.user_management) badges.push('Users');
+                        if (perms.export_excel) badges.push('Export');
+                        if (perms.import_excel) badges.push('Import');
+                        if (perms.edit_data) badges.push('Edit');
+                        if (perms.delete_data) badges.push('Hapus');
+
+                        let badgeHtml = `<div class="flex flex-wrap gap-1 max-w-[200px]">`;
+                        if (badges.length === 0) {
+                            badgeHtml += `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-500">Tanpa Akses</span>`;
+                        } else {
+                            badges.forEach(b => {
+                                badgeHtml += `<span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">${b}</span>`;
+                            });
+                        }
+                        badgeHtml += `</div>`;
+                        rowHtml += `<td class="px-4 py-3">${badgeHtml}</td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         let displayVal = val;
@@ -1891,8 +2038,11 @@
                     }
                 });
 
+                const perms = window.currentUser.permissions || {};
                 rowHtml += `<td class="px-4 py-3 flex items-center space-x-2">`;
-                if (currentTab === 'penyewaan' && item.status !== 'Lunas' && item.status !== 'Selesai') {
+                
+                // Pembatasan aksi Kembalikan Unit (Lunas)
+                if (currentTab === 'penyewaan' && item.status !== 'Lunas' && item.status !== 'Selesai' && perms.edit_data) {
                     rowHtml += `
                         <button onclick="markAsSelesai('${item._firebaseKey}')" class="text-emerald-500 hover:text-emerald-700 p-1 rounded hover:bg-emerald-50 transition" title="Selesai / Kembalikan Unit">
                             <i class="fa-solid fa-circle-check text-base"></i>
@@ -1900,15 +2050,25 @@
                     `;
                 }
                 
-                rowHtml += `
+                // Pembatasan aksi Edit Data secara dinamis
+                if (perms.edit_data) {
+                    rowHtml += `
                         <button onclick="openEditModal('${item._firebaseKey}')" class="text-amber-500 hover:text-amber-700 p-1 rounded hover:bg-amber-50 transition" title="Edit Data">
                             <i class="fa-solid fa-pen-to-square text-base"></i>
                         </button>
+                    `;
+                }
+                
+                // Pembatasan aksi Hapus Data secara dinamis
+                if (perms.delete_data) {
+                    rowHtml += `
                         <button onclick="deleteRow('${item._firebaseKey}')" class="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
-                    </td>`;
-                rowHtml += `</tr>`;
+                    `;
+                }
+                
+                rowHtml += `</td></tr>`;
                 tbody.innerHTML += rowHtml;
             });
 
@@ -1934,6 +2094,12 @@
         }
 
         window.openEditModal = function(firebaseKey) {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.edit_data) {
+                alert("Anda tidak memiliki izin akses untuk mengubah data ini.");
+                return;
+            }
+
             const currentDataList = globalDataCloud[currentTab] || [];
             const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
             if(!targetItem) return;
@@ -2035,9 +2201,10 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Lisensi Office</label><input type="text" id="edit-office" value="${targetItem.office || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Name (Device)</label><input type="text" id="edit-name" value="${targetItem.name || ''}" class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Masa Aktif</label><input type="text" id="edit-masa_aktif" value="${targetItem.masa_aktif || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aksif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aktif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
                 `;
             } else if (currentTab === 'user_management') {
+                const perms = targetItem.permissions || {};
                 fieldsContainer.innerHTML = `
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Lengkap</label><input type="text" id="edit-name" value="${targetItem.name || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Email</label><input type="email" id="edit-email" value="${targetItem.email || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
@@ -2053,19 +2220,66 @@
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Role / Hak Akses</label>
-                        <select id="edit-role" class="w-full border p-2 text-sm rounded-lg">
-                            <option value="admin" ${targetItem.role === 'admin' ? 'selected' : ''}>Admin (Akses Penuh)</option>
-                            <option value="teknisi" ${targetItem.role === 'teknisi' ? 'selected' : ''}>Teknisi (Terbatas)</option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-xs font-semibold text-slate-500 mb-1">Cabang / Branch</label>
                         <select id="edit-branch" class="w-full border p-2 text-sm rounded-lg">
                             <option value="Head Office" ${targetItem.branch === 'Head Office' ? 'selected' : ''}>Head Office</option>
                             <option value="Monumen Emmy Saelan" ${targetItem.branch === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option>
                             <option value="Perintis" ${targetItem.branch === 'Perintis' ? 'selected' : ''}>Perintis</option>
                         </select>
+                    </div>
+
+                    <div class="md:col-span-2 border-t pt-3 mt-2">
+                        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2"><i class="fa-solid fa-key mr-1"></i> Edit Hak Akses Menu & Aksi</span>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-dashboard" ${perms.dashboard ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Dashboard</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-services" ${perms.services ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Log Service</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-penyewaan" ${perms.penyewaan ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Penyewaan</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-cctv" ${perms.cctv ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>CCTV</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-list_laptop" ${perms.list_laptop ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Laptop Gudang</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-laptop_display" ${perms.laptop_display ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Laptop Display</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-list_office" ${perms.list_office ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>List Office</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-user_management" ${perms.user_management ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>User Management</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-export" ${perms.export_excel ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Export Excel</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-import" ${perms.import_excel ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Import Excel</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-edit" ${perms.edit_data ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Edit Data</span>
+                            </label>
+                            <label class="flex items-center space-x-2 p-1.5 hover:bg-slate-50 rounded cursor-pointer">
+                                <input type="checkbox" id="edit-perm-delete" ${perms.delete_data ? 'checked' : ''} class="rounded text-cyan-600 border-gray-300 focus:ring-cyan-500">
+                                <span>Hapus Data</span>
+                            </label>
+                        </div>
                     </div>
                 `;
             }
@@ -2201,8 +2415,22 @@
                 updatedData.name = document.getElementById('edit-name').value;
                 updatedData.email = document.getElementById('edit-email').value;
                 updatedData.password = document.getElementById('edit-password').value;
-                updatedData.role = document.getElementById('edit-role').value;
                 updatedData.branch = document.getElementById('edit-branch').value;
+                updatedData.role = 'custom';
+                updatedData.permissions = {
+                    dashboard: document.getElementById('edit-perm-dashboard').checked,
+                    services: document.getElementById('edit-perm-services').checked,
+                    penyewaan: document.getElementById('edit-perm-penyewaan').checked,
+                    cctv: document.getElementById('edit-perm-cctv').checked,
+                    list_laptop: document.getElementById('edit-perm-list_laptop').checked,
+                    laptop_display: document.getElementById('edit-perm-laptop_display').checked,
+                    list_office: document.getElementById('edit-perm-list_office').checked,
+                    user_management: document.getElementById('edit-perm-user_management').checked,
+                    export_excel: document.getElementById('edit-perm-export').checked,
+                    import_excel: document.getElementById('edit-perm-import').checked,
+                    edit_data: document.getElementById('edit-perm-edit').checked,
+                    delete_data: document.getElementById('edit-perm-delete').checked
+                };
 
                 // Tetapkan ID unik autentikasi yang sudah ada agar relasi tidak terputus
                 const currentDataList = globalDataCloud['user_management'] || [];
@@ -2222,6 +2450,12 @@
         }
 
         window.markAsSelesai = function(firebaseKey) {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.edit_data) {
+                alert("Anda tidak memiliki izin untuk mengedit atau menyelesaikan transaksi ini.");
+                return;
+            }
+
             if(confirm("Apakah unit laptop sudah dikembalikan dan pembayaran lunas?")) {
                 const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
                 if (sewaItem) {
@@ -2247,12 +2481,11 @@
             const d = new Date();
             const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-            // Kasus khusus untuk modul registrasi dan kontrol hak akses User Management
+            // Kasus khusus pendaftaran & perizinan detail User Management
             if (currentTab === 'user_management') {
                 const name = formData.get('name');
                 const email = formData.get('email');
                 const password = formData.get('password');
-                const role = formData.get('role');
                 const branch = formData.get('branch');
 
                 if (password.length < 6) {
@@ -2268,7 +2501,23 @@
                 // 1. Daftarkan kredensial user baru ke Firebase Authentication (Secara paralel tanpa logout Admin)
                 window.registerAuthUser(email, password)
                     .then((uid) => {
-                        // 2. Jika sukses, buat data profil di Realtime Database dengan ID yang sama dengan UID autentikasi
+                        // 2. Ambil seluruh data perizinan dari form checkbox
+                        const permissions = {
+                            dashboard: formData.get('perm_dashboard') === 'true',
+                            services: formData.get('perm_services') === 'true',
+                            penyewaan: formData.get('perm_penyewaan') === 'true',
+                            cctv: formData.get('perm_cctv') === 'true',
+                            list_laptop: formData.get('perm_list_laptop') === 'true',
+                            laptop_display: formData.get('perm_laptop_display') === 'true',
+                            list_office: formData.get('perm_list_office') === 'true',
+                            user_management: formData.get('perm_user_management') === 'true',
+                            export_excel: formData.get('perm_export_excel') === 'true',
+                            import_excel: formData.get('perm_import_excel') === 'true',
+                            edit_data: formData.get('perm_edit_data') === 'true',
+                            delete_data: formData.get('perm_delete_data') === 'true'
+                        };
+
+                        // 3. Jika sukses, buat data profil di Realtime Database dengan ID yang sama dengan UID autentikasi
                         const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
                         
                         const newUserProfile = {
@@ -2277,8 +2526,9 @@
                             name: name,
                             email: email,
                             password: password,
-                            role: role,
-                            branch: branch
+                            role: 'custom',
+                            branch: branch,
+                            permissions: permissions
                         };
 
                         const userRef = window.dbRef(window.dbFirebase, `user_management/${uid}`);
@@ -2402,6 +2652,12 @@
         }
 
         function deleteRow(firebaseKey) {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.delete_data) {
+                alert("Anda tidak memiliki izin untuk menghapus data.");
+                return;
+            }
+
             let confirmationMessage = "Apakah Anda yakin ingin menghapus data ini secara permanen?";
             
             if (currentTab === 'user_management') {
@@ -2514,6 +2770,12 @@
         }
         
         window.exportToExcel = function() {
+            const perms = window.currentUser.permissions || {};
+            if(!perms.export_excel) {
+                alert("Anda tidak memiliki hak akses untuk mengekspor data.");
+                return;
+            }
+
             const data = globalDataCloud[currentTab] || [];
             if (data.length === 0) {
                 showToast("Tidak ada data untuk diekspor","warning");
