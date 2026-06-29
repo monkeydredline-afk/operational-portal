@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -36,7 +35,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, set, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, createUserWithEmailAndPassword as createPrimaryUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth as getAuthSecondary, createUserWithEmailAndPassword as createSecondaryUser, signOut as signOutSecondary } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // =================================================================
         // KONFIGURASI FIREBASE
@@ -55,6 +55,10 @@
         const db = getDatabase(app);
         const auth = getAuth(app);
 
+        // Inisialisasi app sekunder untuk mendaftarkan akun baru tanpa logout Admin
+        const secondaryApp = initializeApp(firebaseConfig, "SecondaryApp");
+        const secondaryAuth = getAuthSecondary(secondaryApp);
+
         window.dbFirebase = db;
         window.dbRef = ref;
         window.dbSet = set;
@@ -66,6 +70,14 @@
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
+        // Fungsi pendaftaran user baru via Secondary Auth Instance
+        window.registerAuthUser = async (email, password) => {
+            const userCredential = await createSecondaryUser(secondaryAuth, email, password);
+            const uid = userCredential.user.uid;
+            await signOutSecondary(secondaryAuth);
+            return uid;
+        };
+
         window.currentUser = {
             uid: null,
             email: null,
@@ -73,7 +85,7 @@
             branch: null
         };
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             const loginSection = document.getElementById('login-section');
             const mainAppSection = document.getElementById('main-app-section');
 
@@ -84,6 +96,30 @@
 
                 window.currentUser.uid = user.uid;
                 window.currentUser.email = user.email;
+                
+                // Ambil data role & cabang secara dinamis dari database
+                try {
+                    const userRef = ref(db, `user_management/${user.uid}`);
+                    const snapshot = await get(userRef);
+                    if (snapshot.exists()) {
+                        const profile = snapshot.val();
+                        window.currentUser.role = profile.role || 'teknisi';
+                        window.currentUser.branch = profile.branch || 'Head Office';
+                    } else {
+                        // Fallback default jika data belum terdaftar di node user_management
+                        if (user.email === 'admin@wanasatria.com' || user.email === 'teknisiprintis@wanasatria.com') {
+                            window.currentUser.role = 'admin';
+                            window.currentUser.branch = user.email === 'teknisiprintis@wanasatria.com' ? 'Perintis' : 'Head Office';
+                        } else {
+                            window.currentUser.role = 'teknisi';
+                            window.currentUser.branch = 'Head Office';
+                        }
+                    }
+                } catch (err) {
+                    console.error("Gagal sinkronisasi data peran:", err);
+                    window.currentUser.role = 'teknisi';
+                    window.currentUser.branch = 'Head Office';
+                }
                 
                 if (typeof initApp === 'function') initApp();
             } else {
@@ -847,11 +883,11 @@
                     <input id="user-name" name="name" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Masukkan nama" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email Akun (Login)</label>
                     <input id="user-email" name="email" type="email" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Masukkan email" required>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password Akun (Min. 6 Karakter)</label>
                     <div class="relative">
                         <input id="user-password" name="password" type="password" class="w-full border border-gray-300 rounded-lg p-2.5 pr-10 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Minimal 6 karakter" required>
                         <button type="button" onclick="window.togglePassword('user-password', 'user-eye')" class="absolute right-3 top-2.5 text-gray-400 hover:text-cyan-600 focus:outline-none transition">
@@ -860,16 +896,16 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role / Hak Akses</label>
                     <select id="user-role" name="role" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="admin">Admin</option>
-                        <option value="teknisi">Teknisi</option>
+                        <option value="admin">Admin (Akses Penuh)</option>
+                        <option value="teknisi">Teknisi (Terbatas)</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Wilayah Cabang (Branch)</label>
                     <select id="user-branch" name="branch" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                        <option value="Head Office">Head Office</option>
+                        <option value="Head Office">Head Office (Semua)</option>
                         <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
                         <option value="Perintis">Perintis</option>
                     </select>
@@ -884,7 +920,7 @@
             list_laptop: ['ID', 'Tanggal Input', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
             laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi'],
             list_office: ['ID', 'Tgl Invite', 'Nama User', 'Akun', 'Password', 'Pemulihan', 'Office', 'Name', 'Masa Aktif', 'Status', 'Aksi'],
-            user_management: ['ID', 'Nama Lengkap', 'Email', 'Password', 'Role', 'Cabang / Branch', 'Aksi']
+            user_management: ['ID', 'Nama Lengkap', 'Email Akun', 'Sandi Terdaftar', 'Role Akses', 'Cabang / Branch', 'Aksi']
         };
 
         const dataKeysMapping = {
@@ -908,29 +944,37 @@
         };
 
         function applyRoleBasedAccess() {
-            const email = window.currentUser.email;
+            const role = window.currentUser.role || 'teknisi';
+            const branch = window.currentUser.branch || 'Head Office';
             
             const btnServices = document.getElementById('btn-services');
+            const btnPenyewaan = document.getElementById('btn-penyewaan');
             const btnCctv = document.getElementById('btn-cctv');
             const btnClear = document.getElementById('btn-clear-data');
             const btnDashboard = document.getElementById('btn-dashboard');
+            const btnUserManagement = document.getElementById('btn-user_management');
+            const btnListOffice = document.getElementById('btn-list_office');
             
             window.userBranch = ''; 
-            if (email === 'teknisiprintis@wanasatria.com') {
-                window.userBranch = 'Perintis';
+            if (branch && branch !== 'Head Office') {
+                window.userBranch = branch;
             }
 
-            if (email === 'teknisi@wanasatria.com') {
+            if (role === 'teknisi') {
                 if (btnServices) btnServices.style.display = 'none';
                 if (btnCctv) btnCctv.style.display = 'none';
                 if (btnClear) btnClear.style.display = 'none'; 
                 if (btnDashboard) btnDashboard.style.display = 'none'; 
+                if (btnUserManagement) btnUserManagement.style.display = 'none';
+                if (btnListOffice) btnListOffice.style.display = 'none';
                 return 'list_laptop'; 
             } else {
                 if (btnServices) btnServices.style.display = '';
                 if (btnCctv) btnCctv.style.display = '';
                 if (btnClear) btnClear.style.display = '';
                 if (btnDashboard) btnDashboard.style.display = '';
+                if (btnUserManagement) btnUserManagement.style.display = '';
+                if (btnListOffice) btnListOffice.style.display = '';
                 return 'services'; 
             }
         }
@@ -1405,7 +1449,7 @@
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)",
                 laptop_display: "Manajemen List Laptop Display (Etalase Toko)",
                 list_office: "Manajemen Akun dan Lisensi Office",
-                user_management: "User Management"
+                user_management: "User Management (Kontrol Akun & Hak Akses)"
             };
 
             const btnClearLabels = {
@@ -1793,7 +1837,8 @@
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">${Number(val).toLocaleString('id-ID')}</td>`;
                     } else if (key === 'role' && currentTab === 'user_management') {
                         let roleBadgeColor = val === 'admin' ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-800';
-                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${roleBadgeColor}">${val}</span></td>`;
+                        let displayRole = val === 'admin' ? 'Admin' : 'Teknisi';
+                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${roleBadgeColor}">${displayRole}</span></td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         let displayVal = val;
@@ -1990,7 +2035,7 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Lisensi Office</label><input type="text" id="edit-office" value="${targetItem.office || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Name (Device)</label><input type="text" id="edit-name" value="${targetItem.name || ''}" class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Masa Aktif</label><input type="text" id="edit-masa_aktif" value="${targetItem.masa_aktif || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
-                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aktif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aksif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
                 `;
             } else if (currentTab === 'user_management') {
                 fieldsContainer.innerHTML = `
@@ -2008,10 +2053,10 @@
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Role</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Role / Hak Akses</label>
                         <select id="edit-role" class="w-full border p-2 text-sm rounded-lg">
-                            <option value="admin" ${targetItem.role === 'admin' ? 'selected' : ''}>Admin</option>
-                            <option value="teknisi" ${targetItem.role === 'teknisi' ? 'selected' : ''}>Teknisi</option>
+                            <option value="admin" ${targetItem.role === 'admin' ? 'selected' : ''}>Admin (Akses Penuh)</option>
+                            <option value="teknisi" ${targetItem.role === 'teknisi' ? 'selected' : ''}>Teknisi (Terbatas)</option>
                         </select>
                     </div>
                     <div>
@@ -2158,6 +2203,13 @@
                 updatedData.password = document.getElementById('edit-password').value;
                 updatedData.role = document.getElementById('edit-role').value;
                 updatedData.branch = document.getElementById('edit-branch').value;
+
+                // Tetapkan ID unik autentikasi yang sudah ada agar relasi tidak terputus
+                const currentDataList = globalDataCloud['user_management'] || [];
+                const targetItem = currentDataList.find(item => item._firebaseKey === firebaseKey);
+                if (targetItem && targetItem.uid) {
+                    updatedData.uid = targetItem.uid;
+                }
             }
 
             const targetItemRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
@@ -2191,11 +2243,63 @@
 
             const formData = new FormData(e.target);
             const currentData = globalDataCloud[currentTab] || [];
-            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
             
             const d = new Date();
             const tanggalHariIni = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
+            // Kasus khusus untuk modul registrasi dan kontrol hak akses User Management
+            if (currentTab === 'user_management') {
+                const name = formData.get('name');
+                const email = formData.get('email');
+                const password = formData.get('password');
+                const role = formData.get('role');
+                const branch = formData.get('branch');
+
+                if (password.length < 6) {
+                    alert("Gagal: Password akun minimal harus terdiri dari 6 karakter!");
+                    return;
+                }
+
+                const btnSubmit = e.target.querySelector('button[type="submit"]');
+                const originalText = btnSubmit.innerHTML;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i> Mendaftarkan Akun...`;
+                btnSubmit.disabled = true;
+
+                // 1. Daftarkan kredensial user baru ke Firebase Authentication (Secara paralel tanpa logout Admin)
+                window.registerAuthUser(email, password)
+                    .then((uid) => {
+                        // 2. Jika sukses, buat data profil di Realtime Database dengan ID yang sama dengan UID autentikasi
+                        const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
+                        
+                        const newUserProfile = {
+                            id: nextId,
+                            uid: uid,
+                            name: name,
+                            email: email,
+                            password: password,
+                            role: role,
+                            branch: branch
+                        };
+
+                        const userRef = window.dbRef(window.dbFirebase, `user_management/${uid}`);
+                        return window.dbSet(userRef, newUserProfile);
+                    })
+                    .then(() => {
+                        showToast("Akun Pengguna & Hak Akses berhasil didaftarkan secara online!");
+                        e.target.reset();
+                    })
+                    .catch((err) => {
+                        alert("Gagal mendaftarkan akun! Detail: " + err.message);
+                    })
+                    .finally(() => {
+                        btnSubmit.innerHTML = originalText;
+                        btnSubmit.disabled = false;
+                    });
+                
+                return; // bypass logic normal di bawah
+            }
+
+            const nextId = currentData.length === 0 ? 1 : Math.max(...currentData.map(d => Number(d.id) || 0)) + 1;
             const newDataItem = { id: nextId };
 
             let inputTgl = formData.get('tanggal');
@@ -2298,7 +2402,13 @@
         }
 
         function deleteRow(firebaseKey) {
-            if(confirm("Hapus data secara permanen?")) {
+            let confirmationMessage = "Apakah Anda yakin ingin menghapus data ini secara permanen?";
+            
+            if (currentTab === 'user_management') {
+                confirmationMessage = "Hapus profil pengguna ini dari database?\n\nCatatan Penting: Untuk menghapus kredensial login akun sepenuhnya, Anda juga disarankan menghapusnya secara manual di Firebase Authentication Console.";
+            }
+
+            if(confirm(confirmationMessage)) {
                 if (currentTab === 'penyewaan') {
                     const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
                     if (sewaItem && sewaItem._linkedLaptopKeys && sewaItem.status !== 'Lunas') {
