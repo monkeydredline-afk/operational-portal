@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -34,7 +35,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue, remove, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         // =================================================================
@@ -65,7 +66,12 @@
         window.firebaseLogin = (email, password) => signInWithEmailAndPassword(auth, email, password);
         window.firebaseLogout = () => signOut(auth);
 
-        window.currentUserEmail = null;
+        window.currentUser = {
+            uid: null,
+            email: null,
+            role: null,
+            branch: null
+        };
 
         onAuthStateChanged(auth, (user) => {
             const loginSection = document.getElementById('login-section');
@@ -75,13 +81,20 @@
                 loginSection.classList.add('hidden');
                 mainAppSection.classList.remove('hidden');
                 document.getElementById('user-logged-email').innerText = user.email;
-                window.currentUserEmail = user.email;
+
+                window.currentUser.uid = user.uid;
+                window.currentUser.email = user.email;
                 
                 if (typeof initApp === 'function') initApp();
             } else {
                 loginSection.classList.remove('hidden');
                 mainAppSection.classList.add('hidden');
-                window.currentUserEmail = null;
+                window.currentUser = {
+                    uid: null,
+                    email: null,
+                    role: null,
+                    branch: null
+                };
             }
         });
     </script>
@@ -116,7 +129,9 @@
                         </button>
                     </div>
                 </div>
-                <button type="submit" id="btn-login-text" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2.5 rounded-lg transition text-sm shadow-sm flex items-center justify-center gap-2">
+                <button type="submit" 
+                id="btn-login-text" 
+                class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2.5 rounded-lg transition text-sm shadow-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
                     <i class="fa-solid fa-right-to-bracket"></i> Verifikasi & Masuk
                 </button>
             </form>
@@ -133,7 +148,7 @@
                     <i class="fa-solid fa-screwdriver-wrench mr-2"></i>Teknisi Portal
                 </h1>
                 <nav class="space-y-2">
-                    <button id="btn-services" onclick="switchTab('services')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <button id="btn-services"  onclick="switchTab('services')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-solid fa-laptop-medical w-6 text-center"></i> <span>Log Services</span>
                     </button>
                     <button id="btn-penyewaan" onclick="switchTab('penyewaan')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
@@ -150,6 +165,9 @@
                     </button>
                     <button id="btn-list_office" onclick="switchTab('list_office')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
                         <i class="fa-brands fa-microsoft w-6 text-center"></i> <span>List Akun Office</span>
+                    </button>
+                    <button id="btn-user_management" onclick="switchTab('user_management')" class="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                        <i class="fa-solid fa-users-gear w-6 text-center"></i> <span>User Management</span>
                     </button>
                 </nav>
             </div>
@@ -514,7 +532,8 @@
             cctv: [],
             list_laptop: [],
             laptop_display: [],
-            list_office: []
+            list_office: [],
+            user_management: []
         }; 
         
         let currentPage = 1;
@@ -544,6 +563,7 @@
                     alert("Gagal masuk! Periksa kembali email dan password Anda.\nDetail: " + err.message);
                     btnText.innerHTML = `<i class="fa-solid fa-right-to-bracket"></i> Verifikasi & Masuk`;
                     btnText.disabled = false;
+                    btnText.classList.remove("opacity-70");
                 });
         }
 
@@ -820,6 +840,40 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Link Redemption</label>
                 <a href="http://redeem.astrindo-starvision.com/" target="_blank"><i class="bx bx-file"></i> Redemption Office</a>
                 </div>
+            `,
+            user_management: `
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+                    <input id="user-name" name="name" type="text" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Masukkan nama" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input id="user-email" name="email" type="email" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Masukkan email" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div class="relative">
+                        <input id="user-password" name="password" type="password" class="w-full border border-gray-300 rounded-lg p-2.5 pr-10 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" placeholder="Minimal 6 karakter" required>
+                        <button type="button" onclick="window.togglePassword('user-password', 'user-eye')" class="absolute right-3 top-2.5 text-gray-400 hover:text-cyan-600 focus:outline-none transition">
+                            <i id="user-eye" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                    <select id="user-role" name="role" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <option value="admin">Admin</option>
+                        <option value="teknisi">Teknisi</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                    <select id="user-branch" name="branch" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                        <option value="Head Office">Head Office</option>
+                        <option value="Monumen Emmy Saelan">Monumen Emmy Saelan</option>
+                        <option value="Perintis">Perintis</option>
+                    </select>
+                </div>
             `
         };
 
@@ -829,7 +883,8 @@
             cctv: ['ID', 'Tanggal', 'Klien', 'Lokasi', 'Kamera', 'Progres', 'Status', 'Aksi'],
             list_laptop: ['ID', 'Tanggal Input', 'Cabang', 'Kode Toko', 'Merk', 'Tipe', 'Serial Number (SN)', 'Spesifikasi Teknik', 'Status', 'Catatan', 'Aksi'],
             laptop_display: ['ID', 'Tanggal Masuk', 'Cabang', 'Teknisi', 'Merk', 'Tipe Model', 'Serial Number (SN)', 'Spesifikasi Ringkas', 'Harga Jual', 'Status Display', 'Catatan', 'Aksi'],
-            list_office: ['ID', 'Tgl Invite', 'Nama User', 'Akun', 'Password', 'Pemulihan', 'Office', 'Name', 'Masa Aktif', 'Status', 'Aksi']
+            list_office: ['ID', 'Tgl Invite', 'Nama User', 'Akun', 'Password', 'Pemulihan', 'Office', 'Name', 'Masa Aktif', 'Status', 'Aksi'],
+            user_management: ['ID', 'Nama Lengkap', 'Email', 'Password', 'Role', 'Cabang / Branch', 'Aksi']
         };
 
         const dataKeysMapping = {
@@ -838,7 +893,8 @@
             cctv: ['id', 'tanggal', 'klien', 'lokasi', 'jumlah_cctv', 'progres', 'status'],
             list_laptop: ['id', 'tanggal', 'cabang', 'kode_toko', 'merk', 'tipe', 'sn', 'spek', 'status', 'catatan'],
             laptop_display: ['id', 'tanggal', 'cabang', 'teknisi', 'merk', 'tipe', 'sn', 'spek_singkat', 'harga_jual', 'status', 'catatan'],
-            list_office: ['id', 'tanggal', 'nama_user', 'akun', 'password', 'pemulihan', 'office', 'name', 'masa_aktif', 'status']
+            list_office: ['id', 'tanggal', 'nama_user', 'akun', 'password', 'pemulihan', 'office', 'name', 'masa_aktif', 'status'],
+            user_management: ['id', 'name', 'email', 'password', 'role', 'branch']
         };
 
         const filterOptionsTemplate = {
@@ -847,11 +903,12 @@
             cctv: ['Survei', 'Pengerjaan', 'Selesai'],
             list_laptop: ['Tersedia', 'Disewa', 'Maintenance', 'Terjual', 'Staf'],
             laptop_display: ['Ready', 'Terjual', 'Gudang'],
-            list_office: ['Aktif', 'Tidak Aktif', 'Permanen']
+            list_office: ['Aktif', 'Tidak Aktif', 'Permanen'],
+            user_management: ['admin', 'teknisi']
         };
 
         function applyRoleBasedAccess() {
-            const email = window.currentUserEmail;
+            const email = window.currentUser.email;
             
             const btnServices = document.getElementById('btn-services');
             const btnCctv = document.getElementById('btn-cctv');
@@ -1288,7 +1345,7 @@
             const defaultTab = applyRoleBasedAccess();
             switchTab(defaultTab);
 
-            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office'];
+            const nodes = ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office','user_management'];
             nodes.forEach(node => {
                 if (!window.dbFirebase) return;
                 const nodeRef = window.dbRef(window.dbFirebase, node);
@@ -1347,7 +1404,8 @@
                 cctv: "Input Proyek CCTV Pemasangan",
                 list_laptop: "Manajemen Unit Laptop yang Disewakan (Master Data)",
                 laptop_display: "Manajemen List Laptop Display (Etalase Toko)",
-                list_office: "Manajemen Akun dan Lisensi Office"
+                list_office: "Manajemen Akun dan Lisensi Office",
+                user_management: "User Management"
             };
 
             const btnClearLabels = {
@@ -1356,7 +1414,8 @@
                 cctv: "Kosongkan Data CCTV",
                 list_laptop: "Kosongkan Master Laptop",
                 laptop_display: "Kosongkan List Laptop Display",
-                list_office: "Kosongkan Data Office"
+                list_office: "Kosongkan Data Office",
+                user_management: "Kosongkan Data Users"
             };
             
             document.getElementById('page-title').innerText = titles[tabName];
@@ -1409,7 +1468,7 @@
                 importBtn.classList.remove('hidden');
             }
             
-            ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office'].forEach(tab => {
+            ['services', 'penyewaan', 'cctv', 'list_laptop', 'laptop_display', 'list_office','user_management'].forEach(tab => {
                 const btn = document.getElementById(`btn-${tab}`);
                 if(btn) {
                     if(tab === tabName) {
@@ -1526,7 +1585,7 @@
                     const excelRows = XLSX.utils.sheet_to_json(worksheet);
                     
                     if (excelRows.length === 0) {
-                        alert("File spreadsheet kosong atau format baris tidak valid.");
+                        showToast("File spreadsheet kosong atau format salah","error");
                         return;
                     }
 
@@ -1536,7 +1595,8 @@
                         cctv: "Proyek CCTV",
                         list_laptop: "Laptop Penyewaan (Master)",
                         laptop_display: "Laptop Display (Etalase)",
-                        list_office: "List Akun Office"
+                        list_office: "List Akun Office",
+                        user_management: "User Management"
                     };
 
                     const tabNameStr = labelsMapping[currentTab] || currentTab;
@@ -1625,13 +1685,20 @@
                             newItemData.name = getVal(['name', 'device', 'nama_pc'], '-');
                             newItemData.masa_aktif = getVal(['masa_aktif', 'masa', 'expired', 'durasi'], '-');
                             newItemData.status = getVal(['status', 'status_lisensi'], 'Aktif');
+                            
+                        } else if (currentTab === 'user_management') {
+                            newItemData.name = getVal(['name', 'nama', 'nama_lengkap'], '-');
+                            newItemData.email = getVal(['email', 'surel'], '-');
+                            newItemData.password = getVal(['password', 'sandi'], '-');
+                            newItemData.role = getVal(['role', 'jabatan'], 'teknisi');
+                            newItemData.branch = getVal(['branch', 'cabang'], 'Head Office');
                         }
 
                         const newPostPushRef = window.dbPush(targetNodeRef);
                         window.dbSet(newPostPushRef, newItemData);
                     });
 
-                    showToast();
+                    showToast("Data spreadsheet berhasil diimpor!");
                     e.target.value = ''; 
                 } catch (err) {
                     alert("Gagal membaca dokumen spreadsheet: " + err.message);
@@ -1647,7 +1714,8 @@
                 cctv: "Proyek CCTV",
                 list_laptop: "Master Data List Laptop",
                 laptop_display: "List Laptop Display",
-                list_office: "List Akun Office"
+                list_office: "List Akun Office",
+                user_management: "User Management"
             };
 
             const targetName = listNames[currentTab];
@@ -1723,6 +1791,9 @@
                     
                     if ((key === 'biaya' || key === 'total_biaya' || key === 'harga_jual') && currentTab !== 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-medium text-slate-900">${Number(val).toLocaleString('id-ID')}</td>`;
+                    } else if (key === 'role' && currentTab === 'user_management') {
+                        let roleBadgeColor = val === 'admin' ? 'bg-cyan-100 text-cyan-800' : 'bg-slate-100 text-slate-800';
+                        rowHtml += `<td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${roleBadgeColor}">${val}</span></td>`;
                     } else if (key === 'status') { 
                         let badgeColor = "bg-amber-100 text-amber-800";
                         let displayVal = val;
@@ -1756,9 +1827,7 @@
                             </td>`;
                     } else if (key === 'sn') {
                         rowHtml += `<td class="px-4 py-3 font-mono font-medium text-cyan-700">${val}</td>`;
-                        // --- TAMBAHKAN KODE INI DI SINI ---
-                    } else if (key === 'password' && currentTab === 'list_office') {
-                        // Bungkus dengan input read-only tipe password dan tombol mata
+                    } else if (key === 'password' && (currentTab === 'list_office' || currentTab === 'user_management')) {
                         rowHtml += `
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-between gap-2 min-w-[130px]">
@@ -1768,7 +1837,6 @@
                                     </button>
                                 </div>
                             </td>`;
-                    // ----------------------------------
                     } else if (key === 'kode_toko' && currentTab === 'list_laptop') {
                         rowHtml += `<td class="px-4 py-3 font-mono font-bold text-slate-700 whitespace-nowrap">${val}</td>`;
                     } else if (key === 'catatan') {
@@ -1861,7 +1929,6 @@
                     </div>
                 `;
             } else if (currentTab === 'penyewaan') {
-                // Simpan key laptop lama ke variabel global
                 window.editSelectedLaptopKeys = targetItem._linkedLaptopKeys ? [...targetItem._linkedLaptopKeys] : [];
 
                 fieldsContainer.innerHTML = `
@@ -1886,7 +1953,6 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status Pembayaran</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Belum Bayar" ${targetItem.status === 'Belum Bayar' ? 'selected' : ''}>Belum Bayar</option><option value="DP 50%" ${targetItem.status === 'DP 50%' ? 'selected' : ''}>DP 50%</option><option value="Lunas" ${targetItem.status === 'Lunas' ? 'selected' : ''}>Lunas</option></select></div>
                 `;
                 
-                // Panggil list checkbox laptop dengan delay kecil agar DOM siap
                 setTimeout(() => { if (typeof populateEditLaptopCheckboxes === 'function') populateEditLaptopCheckboxes(); }, 50);
             } else if (currentTab === 'laptop_display') { 
                 fieldsContainer.innerHTML = `
@@ -1925,6 +1991,37 @@
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Name (Device)</label><input type="text" id="edit-name" value="${targetItem.name || ''}" class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Masa Aktif</label><input type="text" id="edit-masa_aktif" value="${targetItem.masa_aktif || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
                     <div><label class="block text-xs font-semibold text-slate-500 mb-1">Status</label><select id="edit-status" class="w-full border p-2 text-sm rounded-lg"><option value="Aktif" ${targetItem.status === 'Aktif' ? 'selected' : ''}>Aktif</option><option value="Tidak Aktif" ${targetItem.status === 'Tidak Aktif' ? 'selected' : ''}>Tidak Aktif</option><option value="Permanen" ${targetItem.status === 'Permanen' ? 'selected' : ''}>Permanen</option></select></div>
+                `;
+            } else if (currentTab === 'user_management') {
+                fieldsContainer.innerHTML = `
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Nama Lengkap</label><input type="text" id="edit-name" value="${targetItem.name || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    <div><label class="block text-xs font-semibold text-slate-500 mb-1">Email</label><input type="email" id="edit-email" value="${targetItem.email || ''}" required class="w-full border p-2 text-sm rounded-lg"></div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Password</label>
+                        <div class="relative">
+                            <input type="password" id="edit-password" value="${targetItem.password || ''}" required class="w-full border p-2 pr-10 text-sm rounded-lg">
+                            <button type="button" onclick="window.togglePassword('edit-password', 'edit-eye')" class="absolute right-3 top-2.5 text-gray-400 hover:text-cyan-600 focus:outline-none transition">
+                                <i id="edit-eye" class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Role</label>
+                        <select id="edit-role" class="w-full border p-2 text-sm rounded-lg">
+                            <option value="admin" ${targetItem.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            <option value="teknisi" ${targetItem.role === 'teknisi' ? 'selected' : ''}>Teknisi</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Cabang / Branch</label>
+                        <select id="edit-branch" class="w-full border p-2 text-sm rounded-lg">
+                            <option value="Head Office" ${targetItem.branch === 'Head Office' ? 'selected' : ''}>Head Office</option>
+                            <option value="Monumen Emmy Saelan" ${targetItem.branch === 'Monumen Emmy Saelan' ? 'selected' : ''}>Monumen Emmy Saelan</option>
+                            <option value="Perintis" ${targetItem.branch === 'Perintis' ? 'selected' : ''}>Perintis</option>
+                        </select>
+                    </div>
                 `;
             }
 
@@ -2000,13 +2097,11 @@
                 updatedData.total_biaya = document.getElementById('edit-total_biaya').value;
                 updatedData.status = newStatus;
 
-                // 1. Validasi minimal 1 laptop terpilih
                 if (!window.editSelectedLaptopKeys || window.editSelectedLaptopKeys.length === 0) {
                     alert("Silakan centang minimal 1 unit laptop!");
                     return;
                 }
 
-                // 2. Buat string nama-nama laptop untuk tampilan UI
                 const masterLaptop = globalDataCloud['list_laptop'] || [];
                 let listUnitSewa = [];
                 window.editSelectedLaptopKeys.forEach(key => {
@@ -2018,20 +2113,17 @@
                 updatedData.unit = listUnitSewa.join(', ');
                 updatedData._linkedLaptopKeys = window.editSelectedLaptopKeys;
 
-                // 3. Logika Perubahan Status Laptop (Lama vs Baru)
                 const sewaItem = (globalDataCloud['penyewaan'] || []).find(item => item._firebaseKey === firebaseKey);
                 const oldKeys = sewaItem && sewaItem._linkedLaptopKeys ? sewaItem._linkedLaptopKeys : [];
                 const newKeys = window.editSelectedLaptopKeys;
 
                 if (newStatus === 'Lunas' || newStatus === 'Selesai') {
-                    // Jika Lunas, semua unit (baik yang lama maupun yang baru dicentang) akan menjadi "Tersedia"
                     const allKeys = new Set([...oldKeys, ...newKeys]);
                     allKeys.forEach(key => {
                         const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
                         window.dbUpdate(laptopStatusRef, { status: "Tersedia" });
                     });
                 } else {
-                    // Jika laptop lama ada yang tidak dicentang lagi (dibatalkan), kembalikan ke "Tersedia"
                     oldKeys.forEach(key => {
                         if (!newKeys.includes(key)) {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
@@ -2039,7 +2131,6 @@
                         }
                     });
                     
-                    // Jika ada laptop baru yang dicentang, ubah jadi "Disewa"
                     newKeys.forEach(key => {
                         if (!oldKeys.includes(key)) {
                             const laptopStatusRef = window.dbRef(window.dbFirebase, `list_laptop/${key}`);
@@ -2061,13 +2152,19 @@
                 updatedData.name = document.getElementById('edit-name').value;
                 updatedData.masa_aktif = document.getElementById('edit-masa_aktif').value;
                 updatedData.status = document.getElementById('edit-status').value;
+            } else if (currentTab === 'user_management') {
+                updatedData.name = document.getElementById('edit-name').value;
+                updatedData.email = document.getElementById('edit-email').value;
+                updatedData.password = document.getElementById('edit-password').value;
+                updatedData.role = document.getElementById('edit-role').value;
+                updatedData.branch = document.getElementById('edit-branch').value;
             }
 
             const targetItemRef = window.dbRef(window.dbFirebase, `${currentTab}/${firebaseKey}`);
             window.dbUpdate(targetItemRef, updatedData)
                 .then(() => {
                     closeEditModal();
-                    showToast();
+                    showToast("Data berhasil diperbarui secara online!");
                 })
                 .catch((error) => alert("Gagal: " + error.message));
         }
@@ -2083,7 +2180,7 @@
                         });
                     }
                     const sewaStatusRef = window.dbRef(window.dbFirebase, `penyewaan/${firebaseKey}`);
-                    window.dbUpdate(sewaStatusRef, { status: "Lunas" }).then(() => showToast());
+                    window.dbUpdate(sewaStatusRef, { status: "Lunas" }).then(() => showToast("Status penyewaan diubah menjadi Lunas!"));
                 }
             }
         }
@@ -2183,7 +2280,7 @@
                             window.dbUpdate(laptopStatusRef, { status: "Disewa" });
                         });
                     }
-                    showToast();
+                    showToast("Data berhasil disimpan secara real-time!");
                     e.target.reset();
 
                     const dateInput = document.querySelector('#form-fields input[name="tanggal"]');
@@ -2282,17 +2379,34 @@
             }
         }
 
-        function showToast() {
-            const toast = document.getElementById('toast');
-            if(!toast) return;
-            toast.classList.remove('hidden');
-            setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+        function showToast(message, type = "success") {
+            const toast = document.getElementById("toast");
+            if (!toast) return;
+
+            toast.innerText = message;
+            toast.className = "fixed bottom-5 right-5 px-5 py-3 rounded-lg text-white shadow-lg z-50 transition duration-300";
+
+            if(type === "success"){
+                toast.classList.add("bg-emerald-600");
+            }
+            if(type === "error"){
+                toast.classList.add("bg-rose-600");
+            }
+            if(type === "warning"){
+                toast.classList.add("bg-yellow-500");
+            }
+
+            toast.classList.remove("hidden");
+
+            setTimeout(() => {
+                toast.classList.add("hidden");
+            }, 3000);
         }
         
         window.exportToExcel = function() {
             const data = globalDataCloud[currentTab] || [];
             if (data.length === 0) {
-                alert("Tidak ada data untuk diekspor!");
+                showToast("Tidak ada data untuk diekspor","warning");
                 return;
             }
 
